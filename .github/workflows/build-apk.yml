@@ -24,7 +24,7 @@ jobs:
 
       # 3. Устанавливаем зависимости
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
 
       # 4. Собираем сайт (создаёт папку dist/)
       - name: Build web app
