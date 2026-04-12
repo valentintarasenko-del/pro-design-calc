@@ -7,10 +7,15 @@ import { fmt } from '../utils/calculations';
 export default function History() {
   const [list, setList] = useState(() => loadCalculations());
 
-  const handleDelete = (id) => {
+  const handleDelete = (e, id) => {
+    e.stopPropagation(); // не открываем КП при клике на удаление
     if (!confirm('Удалить этот расчёт?')) return;
     deleteCalculation(id);
     setList(loadCalculations());
+  };
+
+  const handleOpen = (id) => {
+    window.location.href = `/kp?id=${id}`;
   };
 
   const formatDate = (iso) => {
@@ -52,12 +57,15 @@ export default function History() {
             {list.map(calc => (
               <div
                 key={calc.id}
-                className="bg-white/5 border border-white/10 hover:border-white/20 rounded-2xl px-6 py-5 transition-colors"
+                onClick={() => handleOpen(calc.id)}
+                className="bg-white/5 border border-white/10 hover:border-brand-blue/50 hover:bg-white/8
+                  rounded-2xl px-6 py-5 transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between gap-4">
+                  {/* Левая часть — название и дата */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-white font-bold truncate">
+                      <h3 className="text-white font-bold truncate group-hover:text-brand-blue transition-colors">
                         {calc.клиент || calc.объект || 'Без названия'}
                       </h3>
                       {calc.режим === 'quick' && (
@@ -72,23 +80,31 @@ export default function History() {
                     <p className="text-white/30 text-xs mt-2">{formatDate(calc.createdAt)}</p>
                   </div>
 
-                  {/* Сумма */}
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-white font-black text-xl">
-                      {calc.result ? fmt(calc.result.итогоСНаценкой) : '—'}
-                    </div>
-                    {calc.result?.маржа !== null && calc.result?.маржа !== undefined && (
-                      <div className={`text-xs mt-0.5 ${calc.result.маржа >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        маржа {calc.result.маржаПроцент}%
+                  {/* Правая часть — сумма и кнопки */}
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="text-right">
+                      <div className="text-white font-black text-xl">
+                        {calc.result ? fmt(calc.result.итогоСНаценкой) : '—'}
                       </div>
-                    )}
-                  </div>
+                      {calc.result?.маржа !== null && calc.result?.маржа !== undefined && (
+                        <div className={`text-xs mt-0.5 ${calc.result.маржа >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          маржа {calc.result.маржаПроцент}%
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Действия */}
-                  <div className="flex gap-2 flex-shrink-0">
+                    {/* Кнопка открыть КП */}
+                    <div
+                      className="opacity-0 group-hover:opacity-100 transition-opacity bg-brand-blue
+                        text-white text-xs font-semibold px-3 py-2 rounded-lg whitespace-nowrap"
+                    >
+                      Открыть КП →
+                    </div>
+
+                    {/* Удалить */}
                     <button
-                      onClick={() => handleDelete(calc.id)}
-                      className="text-white/20 hover:text-red-400 transition-colors text-lg px-1"
+                      onClick={(e) => handleDelete(e, calc.id)}
+                      className="text-white/20 hover:text-red-400 transition-colors text-xl leading-none pb-0.5"
                       title="Удалить"
                     >
                       ×
@@ -96,12 +112,13 @@ export default function History() {
                   </div>
                 </div>
 
-                {/* Краткая разбивка */}
+                {/* Краткая разбивка по блокам */}
                 {calc.result && (
                   <div className="flex gap-4 mt-4 pt-4 border-t border-white/5 text-xs text-white/40 flex-wrap">
                     {calc.result.листы > 0 && <span>Корпуса: {calc.result.листы} л.</span>}
                     {calc.result.фасады > 0 && <span>Фасады: {fmt(calc.result.фасады)}</span>}
                     {calc.result.столешница > 0 && <span>Столешница: {fmt(calc.result.столешница)}</span>}
+                    {calc.result.фурнитура > 0 && <span>Фурнитура: {fmt(calc.result.фурнитура)}</span>}
                     {calc.result.монтаж > 0 && <span>Монтаж: {fmt(calc.result.монтаж)}</span>}
                   </div>
                 )}
