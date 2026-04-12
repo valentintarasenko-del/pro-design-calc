@@ -224,7 +224,7 @@ export default function Calculator() {
     <div className="min-h-screen bg-[#0D0D1A]">
       <AppHeader />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
 
         {/* Предупреждение если не заполнены настройки */}
         {!hasSheetPrice && (
@@ -241,10 +241,10 @@ export default function Calculator() {
           </div>
         )}
 
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
 
           {/* ── Форма (левая колонка) ── */}
-          <div className="flex-1 min-w-0 space-y-5">
+          <div className="flex-1 min-w-0 space-y-4 sm:space-y-5 w-full">
 
             {/* Блок: Клиент + режим */}
             <Card title="Новый расчёт">
@@ -271,7 +271,7 @@ export default function Calculator() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <Field label="Клиент" hint="(необязательно)">
                   <TextInput value={form.клиент} onChange={v => set('клиент', v)} placeholder="Иванов И.И." />
                 </Field>
@@ -313,7 +313,7 @@ export default function Calculator() {
 
             {/* Блок: Корпуса */}
             <Card title="Корпуса (ЛДСП)" badge={result.листы > 0 ? `${result.листы} листов` : undefined}>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4">
                 <Field label="Нижняя база" hint="м">
                   <NumInput value={form.нижняя} onChange={v => set('нижняя', v)} placeholder="3.1" suffix="м" />
                 </Field>
@@ -339,63 +339,81 @@ export default function Calculator() {
             <Card title="Фасады">
               <div className="space-y-3">
                 {form.фасады.map((item, idx) => (
-                  <div key={item.id} className="flex gap-3 items-start">
-                    {/* Материал */}
-                    <div className="flex-1">
-                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Материал</div>}
-                      <select
-                        value={item.материал}
-                        onChange={e => onMaterialSelect(item.id, e.target.value)}
-                        className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
-                          text-white rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                      >
-                        <option value="" className="bg-[#1A1A2E]">— выберите —</option>
-                        {settings.прайсФасадов.map(p => (
-                          <option key={p.id} value={p.материал} className="bg-[#1A1A2E]">{p.материал}</option>
-                        ))}
-                        <option value="__custom__" className="bg-[#1A1A2E]">Другой...</option>
-                      </select>
+                  <div key={item.id}>
+                    {/* Десктоп: горизонтальная строка */}
+                    <div className="hidden sm:flex gap-3 items-start">
+                      <div className="flex-1">
+                        {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Материал</div>}
+                        <select
+                          value={item.материал}
+                          onChange={e => onMaterialSelect(item.id, e.target.value)}
+                          className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
+                            text-white rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                        >
+                          <option value="" className="bg-[#1A1A2E]">— выберите —</option>
+                          {settings.прайсФасадов.map(p => (
+                            <option key={p.id} value={p.материал} className="bg-[#1A1A2E]">{p.материал}</option>
+                          ))}
+                          <option value="__custom__" className="bg-[#1A1A2E]">Другой...</option>
+                        </select>
+                      </div>
+                      <div className="w-28">
+                        {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Площадь</div>}
+                        <NumInput value={item.площадь} onChange={v => updateFasad(item.id, 'площадь', v)} placeholder="0" suffix="м²" />
+                      </div>
+                      <div className="w-36">
+                        {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Цена / м²</div>}
+                        <NumInput value={item.цена} onChange={v => updateFasad(item.id, 'цена', v)} placeholder="0" suffix="₽" />
+                      </div>
+                      <div className="w-28">
+                        {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Итого</div>}
+                        <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 text-right">
+                          {fmt((parseFloat(item.площадь) || 0) * (parseFloat(item.цена) || 0))}
+                        </div>
+                      </div>
+                      {form.фасады.length > 1 && (
+                        <button onClick={() => removeFasad(item.id)}
+                          className={`text-white/30 hover:text-red-400 transition-colors text-lg flex-shrink-0 ${idx === 0 ? 'mt-7' : ''}`}>
+                          ×
+                        </button>
+                      )}
                     </div>
 
-                    {/* Площадь */}
-                    <div className="w-28">
-                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Площадь</div>}
-                      <NumInput
-                        value={item.площадь}
-                        onChange={v => updateFasad(item.id, 'площадь', v)}
-                        placeholder="0"
-                        suffix="м²"
-                      />
-                    </div>
-
-                    {/* Цена за м² */}
-                    <div className="w-36">
-                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Цена / м²</div>}
-                      <NumInput
-                        value={item.цена}
-                        onChange={v => updateFasad(item.id, 'цена', v)}
-                        placeholder="0"
-                        suffix="₽"
-                      />
-                    </div>
-
-                    {/* Итого строки */}
-                    <div className="w-28">
-                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Итого</div>}
-                      <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 text-right">
-                        {fmt((parseFloat(item.площадь) || 0) * (parseFloat(item.цена) || 0))}
+                    {/* Мобильный: карточка */}
+                    <div className="sm:hidden bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={item.материал}
+                          onChange={e => onMaterialSelect(item.id, e.target.value)}
+                          className="flex-1 bg-white/5 border border-white/15 text-white rounded-xl px-3 py-2.5 text-sm outline-none"
+                        >
+                          <option value="" className="bg-[#1A1A2E]">— материал —</option>
+                          {settings.прайсФасадов.map(p => (
+                            <option key={p.id} value={p.материал} className="bg-[#1A1A2E]">{p.материал}</option>
+                          ))}
+                          <option value="__custom__" className="bg-[#1A1A2E]">Другой...</option>
+                        </select>
+                        {form.фасады.length > 1 && (
+                          <button onClick={() => removeFasad(item.id)} className="text-white/30 hover:text-red-400 text-xl px-1">×</button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <div className="text-xs text-white/40 mb-1">Площадь</div>
+                          <NumInput value={item.площадь} onChange={v => updateFasad(item.id, 'площадь', v)} placeholder="0" suffix="м²" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-white/40 mb-1">Цена/м²</div>
+                          <NumInput value={item.цена} onChange={v => updateFasad(item.id, 'цена', v)} placeholder="0" suffix="₽" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-white/40 mb-1">Итого</div>
+                          <div className="bg-white/5 border border-white/10 rounded-xl px-2 py-3 text-xs text-white/70 text-right">
+                            {fmt((parseFloat(item.площадь) || 0) * (parseFloat(item.цена) || 0))}
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Удалить строку */}
-                    {form.фасады.length > 1 && (
-                      <button
-                        onClick={() => removeFasad(item.id)}
-                        className={`text-white/30 hover:text-red-400 transition-colors text-lg flex-shrink-0 ${idx === 0 ? 'mt-7' : ''}`}
-                      >
-                        ×
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
@@ -421,7 +439,7 @@ export default function Calculator() {
               </div>
 
               {form.фрезеровкаВкл && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
                   <Field label="Объём" hint="м²">
                     <NumInput value={form.фрезеровкаОбъём} onChange={v => set('фрезеровкаОбъём', v)} placeholder="0" suffix="м²" />
                   </Field>
@@ -434,7 +452,7 @@ export default function Calculator() {
 
             {/* Блок: Остальные позиции */}
             <Card title="Прочие позиции">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Field label="Столешница" hint="сумма вручную">
                   <NumInput value={form.столешница} onChange={v => set('столешница', v)} placeholder="0" suffix="₽" />
                 </Field>
@@ -446,7 +464,7 @@ export default function Calculator() {
 
             {/* Блок: Монтаж и доставка */}
             <Card title="Монтаж и доставка">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Field label="Монтаж">
                   <NumInput value={form.монтажПроцент} onChange={v => set('монтажПроцент', v)} placeholder="15" suffix="%" />
                 </Field>
@@ -508,9 +526,9 @@ export default function Calculator() {
 
           </div>
 
-          {/* ── Панель результатов (правая колонка, прилипает) ── */}
-          <div className="w-80 flex-shrink-0">
-            <div className="sticky top-20 space-y-4">
+          {/* ── Панель результатов (на мобиле внизу, на десктопе справа) ── */}
+          <div className="w-full lg:w-80 lg:flex-shrink-0">
+            <div className="lg:sticky lg:top-20 space-y-4">
 
               {/* Итоговая карточка */}
               <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
