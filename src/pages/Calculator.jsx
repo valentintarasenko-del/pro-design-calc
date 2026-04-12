@@ -89,6 +89,43 @@ function ResultRow({ label, value, accent, small, bold }) {
   );
 }
 
+// Строка выбора типа и суммы наценки/скидки
+function AdjustRow({ тип, значение, onТип, onЗначение, accent }) {
+  const activeClass = accent === 'orange'
+    ? 'bg-brand-orange/30 text-white'
+    : accent === 'green'
+      ? 'bg-green-500/30 text-white'
+      : 'bg-white/20 text-white';
+
+  return (
+    <div className="flex gap-3">
+      <div className="flex gap-1 p-1 bg-white/5 rounded-xl">
+        {[['none', 'Нет'], ['percent', '%'], ['sum', '₽']].map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => onТип(val)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              тип === val ? activeClass : 'text-white/40 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {тип !== 'none' && (
+        <div className="flex-1">
+          <NumInput
+            value={значение}
+            onChange={onЗначение}
+            placeholder="0"
+            suffix={тип === 'percent' ? '%' : '₽'}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Основной компонент ──────────────────────────────────────────────────────
 
 export default function Calculator() {
@@ -415,35 +452,45 @@ export default function Calculator() {
                   <NumInput value={form.себестоимость} onChange={v => set('себестоимость', v)} placeholder="0" suffix="₽" />
                 </Field>
 
-                <Field label="Дополнительная наценка">
-                  <div className="flex gap-3">
-                    {/* Тип наценки */}
-                    <div className="flex gap-1 p-1 bg-white/5 rounded-xl">
-                      {[['none', 'Нет'], ['percent', '%'], ['sum', '₽']].map(([val, label]) => (
-                        <button
-                          key={val}
-                          onClick={() => set('допНаценкаТип', val)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            form.допНаценкаТип === val
-                              ? 'bg-white/20 text-white'
-                              : 'text-white/40 hover:text-white'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    {form.допНаценкаТип !== 'none' && (
-                      <div className="flex-1">
-                        <NumInput
-                          value={form.допНаценка}
-                          onChange={v => set('допНаценка', v)}
-                          placeholder="0"
-                          suffix={form.допНаценкаТип === 'percent' ? '%' : '₽'}
-                        />
-                      </div>
-                    )}
-                  </div>
+                {/* Скрытая наценка */}
+                <Field
+                  label="Скрытая наценка"
+                  hint="клиент не видит — распределяется по всем статьям"
+                >
+                  <AdjustRow
+                    тип={form.наценкаСкрытаяТип}
+                    значение={form.наценкаСкрытая}
+                    onТип={v => set('наценкаСкрытаяТип', v)}
+                    onЗначение={v => set('наценкаСкрытая', v)}
+                  />
+                </Field>
+
+                {/* Видимая наценка */}
+                <Field
+                  label="Видимая наценка"
+                  hint="показывается в КП как отдельная строка"
+                >
+                  <AdjustRow
+                    тип={form.наценкаВидимаяТип}
+                    значение={form.наценкаВидимая}
+                    onТип={v => set('наценкаВидимаяТип', v)}
+                    onЗначение={v => set('наценкаВидимая', v)}
+                    accent="orange"
+                  />
+                </Field>
+
+                {/* Скидка */}
+                <Field
+                  label="Скидка"
+                  hint="показывается в КП со знаком минус"
+                >
+                  <AdjustRow
+                    тип={form.скидкаТип}
+                    значение={form.скидка}
+                    onТип={v => set('скидкаТип', v)}
+                    onЗначение={v => set('скидка', v)}
+                    accent="green"
+                  />
                 </Field>
               </div>
             </Card>
@@ -466,13 +513,9 @@ export default function Calculator() {
                 </div>
 
                 <div className="px-5 py-4 space-y-1">
-                  {/* Разбивка по блокам */}
+                  {/* Разбивка по блокам — внутренние суммы (себестоимость менеджера) */}
                   {result.листы > 0 && (
-                    <ResultRow
-                      label={`Корпуса (${result.листы} л.)`}
-                      value={fmt(result.корпуса)}
-                      small
-                    />
+                    <ResultRow label={`Корпуса (${result.листы} л.)`} value={fmt(result.корпуса)} small />
                   )}
                   {result.фасады > 0 && (
                     <ResultRow label="Фасады" value={fmt(result.фасады)} small />
@@ -488,28 +531,36 @@ export default function Calculator() {
                   )}
 
                   <div className="border-t border-white/10 my-2" />
-
                   <ResultRow label="Мебель итого" value={fmt(result.итогоМебель)} />
-                  <ResultRow
-                    label={`Монтаж (${result.монтажПроцент}%)`}
-                    value={fmt(result.монтаж)}
-                    small
-                  />
+                  <ResultRow label={`Монтаж (${result.монтажПроцент}%)`} value={fmt(result.монтаж)} small />
                   <ResultRow label="Доставка" value={fmt(result.доставка)} small />
 
                   <div className="border-t border-white/10 my-2" />
+                  <ResultRow label="База" value={fmt(result.baseTotal)} accent="blue" />
 
-                  <ResultRow label="Итого" value={fmt(result.итого)} accent="blue" />
-
-                  {result.итогоСНаценкой !== result.итого && (
-                    <ResultRow label="С наценкой" value={fmt(result.итогоСНаценкой)} accent="orange" bold />
+                  {/* Скрытая наценка — только для менеджера */}
+                  {result.скрытаяСумма > 0 && (
+                    <div className="flex justify-between items-center py-1 px-2 bg-white/5 rounded-lg">
+                      <span className="text-xs text-white/40">🔒 Скрытая наценка</span>
+                      <span className="text-xs text-white/60 font-semibold">+{fmt(result.скрытаяСумма)}</span>
+                    </div>
                   )}
 
-                  {/* Итоговая сумма (самая крупная) */}
+                  {/* Видимая наценка */}
+                  {result.видимаяСумма > 0 && (
+                    <ResultRow label="Доп. услуги (видима)" value={`+${fmt(result.видимаяСумма)}`} accent="orange" small />
+                  )}
+
+                  {/* Скидка */}
+                  {result.скидкаСумма > 0 && (
+                    <ResultRow label="Скидка" value={`−${fmt(result.скидкаСумма)}`} accent="green" small />
+                  )}
+
+                  {/* Итоговая сумма для клиента */}
                   <div className="bg-brand-blue/10 border border-brand-blue/30 rounded-xl p-4 mt-3 text-center">
                     <div className="text-white/60 text-xs mb-1">Цена для клиента</div>
                     <div className="text-white font-black text-2xl">
-                      {fmt(result.итогоСНаценкой)}
+                      {fmt(result.итогоКлиент)}
                     </div>
                   </div>
 

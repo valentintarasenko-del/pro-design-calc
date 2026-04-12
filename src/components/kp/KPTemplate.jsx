@@ -222,9 +222,9 @@ export default function KPTemplate({ calc }) {
             </div>
           </div>
           <div style={{ textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
-            {r.итогоМебель > 0 && <div>Мебель: {fmt(r.итогоМебель)}</div>}
-            {r.монтаж > 0 && <div>Монтаж: {fmt(r.монтаж)}</div>}
-            {r.доставка > 0 && <div>Доставка: {fmt(r.доставка)}</div>}
+            {r.кпКорпуса > 0 && <div>Мебель: {fmt(r.кпBase - r.кпДоставка - r.кпМонтаж)}</div>}
+            {r.кпМонтаж > 0 && <div>Монтаж: {fmt(r.кпМонтаж)}</div>}
+            {r.кпДоставка > 0 && <div>Доставка: {fmt(r.кпДоставка)}</div>}
           </div>
         </div>
 
@@ -296,79 +296,87 @@ export default function KPTemplate({ calc }) {
             </tr>
           </thead>
           <tbody>
-            {/* Корпуса */}
+            {/* Корпуса — показываем цены со скрытой наценкой внутри (кп* суммы) */}
             {r.листы > 0 && <>
               <TableRow isCategory label="Корпуса" />
               <TableRow
                 label="ЛДСП 16мм — корпусные детали"
                 detail={`${r.листы} листов × ${calc.нижняя || 0}+${calc.верхняя || 0}м баз, ${calc.пеналы || 0} пен.`}
-                amount={fmt(r.корпуса)}
+                amount={fmt(r.кпКорпуса)}
               />
-              <TableRow isSubtotal label="Итого корпуса" amount={fmt(r.корпуса)} />
+              <TableRow isSubtotal label="Итого корпуса" amount={fmt(r.кпКорпуса)} />
             </>}
 
-            {/* Фасады */}
-            {r.фасады > 0 && <>
+            {/* Фасады — цена за м² тоже умножена на коэффициент скрытой наценки */}
+            {r.кпФасады > 0 && <>
               <TableRow isCategory label="Фасады" />
-              {(calc.фасады || []).filter(f => parseFloat(f.площадь) > 0).map((f, i) => (
-                <TableRow
-                  key={i}
-                  label={f.материал || 'Фасад'}
-                  detail={`${f.площадь} м² × ${fmt(parseFloat(f.цена) || 0)}/м²`}
-                  amount={fmt((parseFloat(f.площадь) || 0) * (parseFloat(f.цена) || 0))}
-                />
-              ))}
-              <TableRow isSubtotal label="Итого фасады" amount={fmt(r.фасады)} />
+              {(calc.фасады || []).filter(f => parseFloat(f.площадь) > 0).map((f, i) => {
+                const площадь = parseFloat(f.площадь) || 0;
+                const ценаКП = (parseFloat(f.цена) || 0) * (r.скрМульт || 1);
+                return (
+                  <TableRow
+                    key={i}
+                    label={f.материал || 'Фасад'}
+                    detail={`${площадь} м² × ${fmt(ценаКП)}/м²`}
+                    amount={fmt(площадь * ценаКП)}
+                  />
+                );
+              })}
+              <TableRow isSubtotal label="Итого фасады" amount={fmt(r.кпФасады)} />
             </>}
 
             {/* Фрезеровка */}
-            {r.фрезеровка > 0 && <>
+            {r.кпФрезеровка > 0 && <>
               <TableRow isCategory label="Фрезеровка" />
               <TableRow
                 label="Фрезеровка фасадов"
-                detail={`${calc.фрезеровкаОбъём} м² × ${fmt(parseFloat(calc.фрезеровкаЦена) || 0)}/м²`}
-                amount={fmt(r.фрезеровка)}
+                detail={`${calc.фрезеровкаОбъём} м²`}
+                amount={fmt(r.кпФрезеровка)}
               />
             </>}
 
             {/* Столешница */}
-            {r.столешница > 0 && <>
+            {r.кпСтолешница > 0 && <>
               <TableRow isCategory label="Столешница" />
-              <TableRow label="Столешница" detail="" amount={fmt(r.столешница)} />
+              <TableRow label="Столешница" detail="" amount={fmt(r.кпСтолешница)} />
             </>}
 
             {/* Фурнитура */}
-            {r.фурнитура > 0 && <>
+            {r.кпФурнитура > 0 && <>
               <TableRow isCategory label="Фурнитура" />
-              <TableRow label="Фурнитура и комплектующие" detail="" amount={fmt(r.фурнитура)} />
+              <TableRow label="Фурнитура и комплектующие" detail="" amount={fmt(r.кпФурнитура)} />
             </>}
-
-            {/* Итог по мебели */}
-            {r.итогоМебель > 0 && (
-              <TableRow isSubtotal label="Итого мебель" amount={fmt(r.итогоМебель)} />
-            )}
 
             {/* Монтаж и доставка */}
-            {(r.монтаж > 0 || r.доставка > 0) && <>
+            {(r.кпМонтаж > 0 || r.кпДоставка > 0) && <>
               <TableRow isCategory label="Монтаж и доставка" />
-              {r.монтаж > 0 && (
+              {r.кпМонтаж > 0 && (
                 <TableRow
-                  label={`Профессиональный монтаж`}
+                  label="Профессиональный монтаж"
                   detail={`${r.монтажПроцент}% от стоимости мебели`}
-                  amount={fmt(r.монтаж)}
+                  amount={fmt(r.кпМонтаж)}
                 />
               )}
-              {r.доставка > 0 && (
-                <TableRow label="Доставка на объект" detail="" amount={fmt(r.доставка)} />
+              {r.кпДоставка > 0 && (
+                <TableRow label="Доставка на объект" detail="" amount={fmt(r.кпДоставка)} />
               )}
             </>}
 
-            {/* Доп. наценка */}
-            {r.итогоСНаценкой !== r.итого && r.итогоСНаценкой > 0 && (
+            {/* Видимая наценка — отдельная строка */}
+            {r.видимаяСумма > 0 && (
               <TableRow
-                label="Дополнительная наценка"
+                label="Дополнительные услуги"
                 detail=""
-                amount={fmt(r.итогоСНаценкой - r.итого)}
+                amount={fmt(r.видимаяСумма)}
+              />
+            )}
+
+            {/* Скидка — отдельная строка со знаком минус */}
+            {r.скидкаСумма > 0 && (
+              <TableRow
+                label="Скидка"
+                detail=""
+                amount={`−${fmt(r.скидкаСумма)}`}
               />
             )}
 
