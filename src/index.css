@@ -21,3 +21,29 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* ── Стили для печати / сохранения PDF ── */
+@media print {
+  /* Скрываем всё кроме документа КП */
+  body { background: white !important; }
+  .print-hidden { display: none !important; }
+
+  /* Документ КП занимает всю страницу */
+  .kp-document {
+    width: 100% !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  /* Разрывы страниц */
+  .page-break { page-break-before: always; break-before: page; }
+  .no-break { page-break-inside: avoid; break-inside: avoid; }
+}
+
+/* Обёртка страницы A4 (794px = A4 при 96dpi) */
+.kp-page-wrapper {
+  width: 794px;
+  min-height: 1123px;
+  background: white;
+  font-family: 'Inter', sans-serif;
+}

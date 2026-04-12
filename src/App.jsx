@@ -3,6 +3,7 @@ import Landing from './pages/Landing';
 import Calculator from './pages/Calculator';
 import Settings from './pages/Settings';
 import History from './pages/History';
+import KP from './pages/KP';
 import './index.css';
 
 export default function App() {
@@ -10,6 +11,7 @@ export default function App() {
 
   if (path.startsWith('/settings')) return <Settings />;
   if (path.startsWith('/history'))  return <History />;
+  if (path.startsWith('/kp'))       return <KP />;
   if (path.startsWith('/app'))      return <Calculator />;
 
   return <Landing />;

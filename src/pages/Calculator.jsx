@@ -146,10 +146,27 @@ export default function Calculator() {
     }));
   };
 
+  // Загрузить фото объекта
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Читаем как base64 и сохраняем в форму
+    const reader = new FileReader();
+    reader.onload = (ev) => set('изображение', ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
   // Сохранить расчёт
   const handleSave = () => {
     saveCalculation({ ...form, result });
     setSaved(true);
+  };
+
+  // Сохранить и перейти к КП
+  const handleGenerateKP = () => {
+    const calcToSave = { ...form, result };
+    saveCalculation(calcToSave);
+    window.location.href = `/kp?id=${form.id}`;
   };
 
   const isQuick = form.режим === 'quick';
@@ -206,7 +223,7 @@ export default function Calculator() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <Field label="Клиент" hint="(необязательно)">
                   <TextInput value={form.клиент} onChange={v => set('клиент', v)} placeholder="Иванов И.И." />
                 </Field>
@@ -214,6 +231,36 @@ export default function Calculator() {
                   <TextInput value={form.объект} onChange={v => set('объект', v)} placeholder="Кухня, ул. Ленина 5" />
                 </Field>
               </div>
+
+              {/* Загрузка фото объекта */}
+              <Field label="Фото объекта" hint="появится в КП (необязательно)">
+                <label className="flex items-center gap-4 cursor-pointer group">
+                  <div className={`flex-1 border-2 border-dashed rounded-xl px-4 py-3 text-sm transition-colors ${
+                    form.изображение
+                      ? 'border-brand-blue/50 bg-brand-blue/5 text-brand-blue'
+                      : 'border-white/15 text-white/40 group-hover:border-white/30 group-hover:text-white/60'
+                  }`}>
+                    {form.изображение ? '✓ Фото загружено — нажмите чтобы заменить' : '+ Загрузить фото объекта'}
+                  </div>
+                  {form.изображение && (
+                    <img src={form.изображение} alt="" className="w-16 h-12 object-cover rounded-lg border border-white/20" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                {form.изображение && (
+                  <button
+                    onClick={() => set('изображение', null)}
+                    className="mt-2 text-xs text-white/30 hover:text-red-400 transition-colors"
+                  >
+                    × Удалить фото
+                  </button>
+                )}
+              </Field>
             </Card>
 
             {/* Блок: Корпуса */}
@@ -498,11 +545,10 @@ export default function Calculator() {
                 </button>
 
                 <button
-                  disabled
-                  className="w-full py-3 rounded-xl font-semibold text-sm bg-brand-blue/40 text-white/50 cursor-not-allowed border border-brand-blue/20"
-                  title="Будет в следующей версии"
+                  onClick={handleGenerateKP}
+                  className="w-full py-3 rounded-xl font-semibold text-sm bg-brand-blue hover:bg-brand-blue/90 text-white transition-colors"
                 >
-                  Сформировать КП (PDF) →
+                  Сформировать КП →
                 </button>
               </div>
 
