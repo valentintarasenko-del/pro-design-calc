@@ -1,5 +1,51 @@
 // Страница предпросмотра и скачивания КП
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+// Компонент предпросмотра — на мобиле масштабирует A4 под ширину экрана
+function MobileScaledPreview({ docRef, calc }) {
+  const wrapperRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  const updateScale = useCallback(() => {
+    if (wrapperRef.current) {
+      const available = wrapperRef.current.parentElement.clientWidth - 16;
+      const newScale = Math.min(1, available / 794);
+      setScale(newScale);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [updateScale]);
+
+  const isMobile = scale < 1;
+
+  return (
+    <div ref={wrapperRef} style={isMobile ? {
+      width: `${794 * scale}px`,
+      height: `${1123 * scale * 2}px`, // две страницы
+      position: 'relative',
+      overflow: 'hidden',
+    } : {}}>
+      <div
+        ref={docRef}
+        style={isMobile ? {
+          transformOrigin: 'top left',
+          transform: `scale(${scale})`,
+          width: '794px',
+          boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
+        } : {
+          boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
+        }}
+        className="rounded-sm overflow-hidden"
+      >
+        <KPTemplate calc={calc} />
+      </div>
+    </div>
+  );
+}
 import AppHeader from '../components/AppHeader';
 import KPTemplate from '../components/kp/KPTemplate';
 import { loadCalculations } from '../utils/storage';
@@ -7,10 +53,10 @@ import { loadCalculations } from '../utils/storage';
 export default function KP() {
   const [calc, setCalc] = useState(null);
   const [loading, setLoading] = useState(false);
+  // Единственный ref — только на видимый предпросмотр
   const docRef = useRef(null);
 
   useEffect(() => {
-    // Получаем id из URL: /kp?id=123
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) {
       const list = loadCalculations();
@@ -25,7 +71,6 @@ export default function KP() {
     setLoading(true);
 
     try {
-      // Динамически импортируем html2pdf (чтобы не тормозил загрузку)
       const html2pdf = (await import('html2pdf.js')).default;
 
       const clientName = calc?.клиент || calc?.объект || 'КП';
@@ -41,6 +86,8 @@ export default function KP() {
             useCORS: true,
             letterRendering: true,
             backgroundColor: '#ffffff',
+            // Важно: элемент должен быть видим для html2canvas
+            windowWidth: 794,
           },
           jsPDF: {
             unit: 'mm',
@@ -53,13 +100,12 @@ export default function KP() {
         .save();
     } catch (e) {
       console.error('PDF error:', e);
-      alert('Ошибка при создании PDF. Попробуйте через Ctrl+P → Сохранить как PDF.');
+      alert('Ошибка при создании PDF. Попробуйте через меню браузера → Печать → Сохранить как PDF.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Альтернатива: печать через браузер
   const handlePrint = () => window.print();
 
   if (!calc) {
@@ -88,10 +134,11 @@ export default function KP() {
         <AppHeader />
 
         {/* Панель управления */}
-        <div className="bg-[#0D0D1A] border-b border-white/10 py-4 px-6 sticky top-[57px] z-40">
-          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-white font-bold text-lg">
+        <div className="bg-[#0D0D1A] border-b border-white/10 py-3 px-4 sm:px-6 sticky top-[57px] z-40">
+          <div className="max-w-4xl mx-auto">
+            {/* Заголовок */}
+            <div className="mb-3">
+              <h1 className="text-white font-bold text-base sm:text-lg leading-tight">
                 {calc.клиент
                   ? `КП для ${calc.клиент}`
                   : calc.объект || 'Коммерческое предложение'}
@@ -101,34 +148,35 @@ export default function KP() {
               )}
             </div>
 
-            <div className="flex gap-3">
+            {/* Кнопки — в ряд, равномерно */}
+            <div className="flex gap-2">
               <a
                 href={`/app?id=${calc?.id}`}
-                className="border border-white/20 hover:border-white/40 text-white/70 hover:text-white
-                  font-medium px-4 py-2.5 rounded-xl transition-colors text-sm"
+                className="flex-1 sm:flex-none border border-white/20 hover:border-white/40 text-white/70 hover:text-white
+                  font-medium px-3 py-2 rounded-xl transition-colors text-xs sm:text-sm text-center"
               >
-                ← Изменить расчёт
+                ← Изменить
               </a>
               <button
                 onClick={handlePrint}
-                className="border border-white/20 hover:border-white/40 text-white/70 hover:text-white
-                  font-medium px-4 py-2.5 rounded-xl transition-colors text-sm"
+                className="flex-1 sm:flex-none border border-white/20 hover:border-white/40 text-white/70 hover:text-white
+                  font-medium px-3 py-2 rounded-xl transition-colors text-xs sm:text-sm"
               >
                 🖨 Печать
               </button>
               <button
                 onClick={handleDownloadPDF}
                 disabled={loading}
-                className="bg-brand-blue hover:bg-brand-blue/90 disabled:opacity-50 text-white
-                  font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2"
+                className="flex-1 sm:flex-none bg-brand-blue hover:bg-brand-blue/90 disabled:opacity-50 text-white
+                  font-semibold px-3 py-2 rounded-xl transition-colors text-xs sm:text-sm flex items-center justify-center gap-1.5"
               >
                 {loading ? (
                   <>
-                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Создаём PDF...
+                    <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="hidden sm:inline">Создаём...</span>
                   </>
                 ) : (
-                  <>⬇ Скачать PDF</>
+                  <>⬇ <span>PDF</span></>
                 )}
               </button>
             </div>
@@ -136,15 +184,14 @@ export default function KP() {
         </div>
       </div>
 
-      {/* Предпросмотр КП — белая страница на тёмном фоне */}
-      <div className="print-hidden py-8 flex justify-center">
-        <div ref={docRef} className="shadow-2xl rounded-sm overflow-hidden">
-          <KPTemplate calc={calc} />
-        </div>
+      {/* Предпросмотр КП — ref только здесь, этот элемент ВИДИМ */}
+      <div className="print-hidden py-6 sm:py-8 flex justify-center px-2 sm:px-0">
+        {/* На мобильном масштабируем A4 чтобы влезал на экран */}
+        <MobileScaledPreview docRef={docRef} calc={calc} />
       </div>
 
-      {/* Версия для печати — только документ, без обёртки */}
-      <div className="hidden print:block" ref={docRef}>
+      {/* Версия для печати — без ref, html2pdf не должен её трогать */}
+      <div className="hidden print:block">
         <KPTemplate calc={calc} />
       </div>
 
