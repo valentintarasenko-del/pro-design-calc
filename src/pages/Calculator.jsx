@@ -1,0 +1,521 @@
+// Главная страница — расчёт стоимости мебели
+import { useState, useMemo } from 'react';
+import AppHeader from '../components/AppHeader';
+import { calcTotal, fmt } from '../utils/calculations';
+import { loadSettings, defaultForm, saveCalculation } from '../utils/storage';
+
+// ─── Вспомогательные компоненты ─────────────────────────────────────────────
+
+// Карточка-блок формы
+function Card({ title, children, badge }) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+        <h3 className="text-white font-bold">{title}</h3>
+        {badge && (
+          <span className="text-xs bg-white/10 text-white/60 px-2 py-1 rounded-lg">{badge}</span>
+        )}
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
+  );
+}
+
+// Поле ввода
+function Field({ label, hint, children }) {
+  return (
+    <div>
+      <label className="block text-sm text-white/60 mb-1.5">
+        {label}
+        {hint && <span className="ml-1 text-white/30 text-xs">{hint}</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+// Числовой инпут
+function NumInput({ value, onChange, placeholder, suffix, min = 0 }) {
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder || '0'}
+        min={min}
+        className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
+          text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm outline-none transition-colors
+          [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      {suffix && (
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm pointer-events-none">
+          {suffix}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Текстовый инпут
+function TextInput({ value, onChange, placeholder }) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
+        text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+    />
+  );
+}
+
+// Строка в итоговой панели
+function ResultRow({ label, value, accent, small, bold }) {
+  return (
+    <div className={`flex justify-between items-center ${small ? 'py-1' : 'py-2'}`}>
+      <span className={`${small ? 'text-xs text-white/40' : 'text-sm text-white/70'}`}>{label}</span>
+      <span className={`font-semibold tabular-nums ${
+        bold ? 'text-lg text-white' :
+        accent === 'blue' ? 'text-brand-blue' :
+        accent === 'green' ? 'text-green-400' :
+        accent === 'orange' ? 'text-brand-orange' :
+        'text-white/90 text-sm'
+      }`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// ─── Основной компонент ──────────────────────────────────────────────────────
+
+export default function Calculator() {
+  const settings = useMemo(() => loadSettings(), []);
+
+  const [form, setForm] = useState(() => defaultForm(settings));
+  const [saved, setSaved] = useState(false);
+
+  // Обновить одно поле формы
+  const set = (field, value) => {
+    setSaved(false);
+    setForm(f => ({ ...f, [field]: value }));
+  };
+
+  // Расчёт в реальном времени (пересчитывается при каждом изменении формы)
+  const result = useMemo(() => calcTotal(form, settings), [form, settings]);
+
+  // Обновить строку фасада
+  const updateFasad = (id, field, value) => {
+    setSaved(false);
+    setForm(f => ({
+      ...f,
+      фасады: f.фасады.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  // Добавить строку фасада
+  const addFasad = () => {
+    setForm(f => ({
+      ...f,
+      фасады: [...f.фасады, { id: Date.now(), материал: '', площадь: '', цена: '' }],
+    }));
+  };
+
+  // Удалить строку фасада
+  const removeFasad = (id) => {
+    setForm(f => ({
+      ...f,
+      фасады: f.фасады.filter(item => item.id !== id),
+    }));
+  };
+
+  // При выборе материала подставляем цену из прайса
+  const onMaterialSelect = (id, материал) => {
+    const priceItem = settings.прайсФасадов.find(p => p.материал === материал);
+    setForm(f => ({
+      ...f,
+      фасады: f.фасады.map(item =>
+        item.id === id
+          ? { ...item, материал, цена: priceItem?.цена || item.цена }
+          : item
+      ),
+    }));
+  };
+
+  // Сохранить расчёт
+  const handleSave = () => {
+    saveCalculation({ ...form, result });
+    setSaved(true);
+  };
+
+  const isQuick = form.режим === 'quick';
+  const hasSheetPrice = settings.ценаЛиста > 0;
+
+  return (
+    <div className="min-h-screen bg-[#0D0D1A]">
+      <AppHeader />
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Предупреждение если не заполнены настройки */}
+        {!hasSheetPrice && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-5 py-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-yellow-400 text-xl">⚠</span>
+              <span className="text-yellow-200/90 text-sm">
+                Не заполнена цена листа ЛДСП — корпуса считаются в 0 ₽.
+              </span>
+            </div>
+            <a href="/settings" className="text-yellow-400 text-sm font-semibold hover:underline whitespace-nowrap ml-4">
+              Открыть настройки →
+            </a>
+          </div>
+        )}
+
+        <div className="flex gap-8 items-start">
+
+          {/* ── Форма (левая колонка) ── */}
+          <div className="flex-1 min-w-0 space-y-5">
+
+            {/* Блок: Клиент + режим */}
+            <Card title="Новый расчёт">
+              {/* Переключатель режима */}
+              <div className="flex gap-2 mb-6 p-1 bg-white/5 rounded-xl w-fit">
+                {[['quick', '⚡ Быстрый'], ['detailed', '🎯 Точный']].map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => set('режим', val)}
+                    className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      form.режим === val
+                        ? 'bg-brand-blue text-white shadow'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {isQuick && (
+                <div className="bg-brand-blue/10 border border-brand-blue/20 rounded-xl px-4 py-3 mb-5 text-sm text-brand-blue/90">
+                  Быстрый режим — часть данных приблизительная. КП будет помечено как «Предварительный расчёт».
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Клиент" hint="(необязательно)">
+                  <TextInput value={form.клиент} onChange={v => set('клиент', v)} placeholder="Иванов И.И." />
+                </Field>
+                <Field label="Объект" hint="(необязательно)">
+                  <TextInput value={form.объект} onChange={v => set('объект', v)} placeholder="Кухня, ул. Ленина 5" />
+                </Field>
+              </div>
+            </Card>
+
+            {/* Блок: Корпуса */}
+            <Card title="Корпуса (ЛДСП)" badge={result.листы > 0 ? `${result.листы} листов` : undefined}>
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="Нижняя база" hint="м">
+                  <NumInput value={form.нижняя} onChange={v => set('нижняя', v)} placeholder="3.1" suffix="м" />
+                </Field>
+                <Field label="Верхняя база" hint="м">
+                  <NumInput value={form.верхняя} onChange={v => set('верхняя', v)} placeholder="2.7" suffix="м" />
+                </Field>
+                <Field label="Пеналы" hint="шт">
+                  <NumInput value={form.пеналы} onChange={v => set('пеналы', v)} placeholder="0" suffix="шт" />
+                </Field>
+              </div>
+
+              {result.листы > 0 && (
+                <div className="mt-4 bg-white/5 rounded-xl px-4 py-3 flex items-center justify-between text-sm">
+                  <span className="text-white/60">
+                    Расчёт: {form.пеналы || 0} пеналов + ⌈({form.нижняя || 0} + {form.верхняя || 0}) / {settings.коэф}⌉
+                  </span>
+                  <span className="text-white font-bold">{result.листы} листов</span>
+                </div>
+              )}
+            </Card>
+
+            {/* Блок: Фасады */}
+            <Card title="Фасады">
+              <div className="space-y-3">
+                {form.фасады.map((item, idx) => (
+                  <div key={item.id} className="flex gap-3 items-start">
+                    {/* Материал */}
+                    <div className="flex-1">
+                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Материал</div>}
+                      <select
+                        value={item.материал}
+                        onChange={e => onMaterialSelect(item.id, e.target.value)}
+                        className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
+                          text-white rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                      >
+                        <option value="" className="bg-[#1A1A2E]">— выберите —</option>
+                        {settings.прайсФасадов.map(p => (
+                          <option key={p.id} value={p.материал} className="bg-[#1A1A2E]">{p.материал}</option>
+                        ))}
+                        <option value="__custom__" className="bg-[#1A1A2E]">Другой...</option>
+                      </select>
+                    </div>
+
+                    {/* Площадь */}
+                    <div className="w-28">
+                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Площадь</div>}
+                      <NumInput
+                        value={item.площадь}
+                        onChange={v => updateFasad(item.id, 'площадь', v)}
+                        placeholder="0"
+                        suffix="м²"
+                      />
+                    </div>
+
+                    {/* Цена за м² */}
+                    <div className="w-36">
+                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Цена / м²</div>}
+                      <NumInput
+                        value={item.цена}
+                        onChange={v => updateFasad(item.id, 'цена', v)}
+                        placeholder="0"
+                        suffix="₽"
+                      />
+                    </div>
+
+                    {/* Итого строки */}
+                    <div className="w-28">
+                      {idx === 0 && <div className="text-xs text-white/40 mb-1.5">Итого</div>}
+                      <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 text-right">
+                        {fmt((parseFloat(item.площадь) || 0) * (parseFloat(item.цена) || 0))}
+                      </div>
+                    </div>
+
+                    {/* Удалить строку */}
+                    {form.фасады.length > 1 && (
+                      <button
+                        onClick={() => removeFasad(item.id)}
+                        className={`text-white/30 hover:text-red-400 transition-colors text-lg flex-shrink-0 ${idx === 0 ? 'mt-7' : ''}`}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={addFasad}
+                className="mt-4 text-sm text-brand-blue hover:text-brand-blue/80 transition-colors flex items-center gap-1"
+              >
+                + Добавить строку фасадов
+              </button>
+            </Card>
+
+            {/* Блок: Фрезеровка */}
+            <Card title="Фрезеровка">
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={() => set('фрезеровкаВкл', !form.фрезеровкаВкл)}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${form.фрезеровкаВкл ? 'bg-brand-blue' : 'bg-white/20'}`}
+                >
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow ${form.фрезеровкаВкл ? 'left-6' : 'left-1'}`} />
+                </button>
+                <span className="text-sm text-white/70">Есть фрезеровка</span>
+              </div>
+
+              {form.фрезеровкаВкл && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Объём" hint="м²">
+                    <NumInput value={form.фрезеровкаОбъём} onChange={v => set('фрезеровкаОбъём', v)} placeholder="0" suffix="м²" />
+                  </Field>
+                  <Field label="Цена за м²">
+                    <NumInput value={form.фрезеровкаЦена} onChange={v => set('фрезеровкаЦена', v)} placeholder="0" suffix="₽" />
+                  </Field>
+                </div>
+              )}
+            </Card>
+
+            {/* Блок: Остальные позиции */}
+            <Card title="Прочие позиции">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Столешница" hint="сумма вручную">
+                  <NumInput value={form.столешница} onChange={v => set('столешница', v)} placeholder="0" suffix="₽" />
+                </Field>
+                <Field label="Фурнитура" hint={isQuick ? 'необязательно' : 'сумма вручную'}>
+                  <NumInput value={form.фурнитура} onChange={v => set('фурнитура', v)} placeholder="0" suffix="₽" />
+                </Field>
+              </div>
+            </Card>
+
+            {/* Блок: Монтаж и доставка */}
+            <Card title="Монтаж и доставка">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Монтаж">
+                  <NumInput value={form.монтажПроцент} onChange={v => set('монтажПроцент', v)} placeholder="15" suffix="%" />
+                </Field>
+                <Field label="Доставка">
+                  <NumInput value={form.доставка} onChange={v => set('доставка', v)} placeholder="6000" suffix="₽" />
+                </Field>
+              </div>
+            </Card>
+
+            {/* Блок: Финансы (только в точном режиме или если нужно) */}
+            <Card title="Финансы и маржа">
+              <div className="space-y-4">
+                <Field label="Себестоимость" hint="необязательно — только для контроля маржи">
+                  <NumInput value={form.себестоимость} onChange={v => set('себестоимость', v)} placeholder="0" suffix="₽" />
+                </Field>
+
+                <Field label="Дополнительная наценка">
+                  <div className="flex gap-3">
+                    {/* Тип наценки */}
+                    <div className="flex gap-1 p-1 bg-white/5 rounded-xl">
+                      {[['none', 'Нет'], ['percent', '%'], ['sum', '₽']].map(([val, label]) => (
+                        <button
+                          key={val}
+                          onClick={() => set('допНаценкаТип', val)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            form.допНаценкаТип === val
+                              ? 'bg-white/20 text-white'
+                              : 'text-white/40 hover:text-white'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {form.допНаценкаТип !== 'none' && (
+                      <div className="flex-1">
+                        <NumInput
+                          value={form.допНаценка}
+                          onChange={v => set('допНаценка', v)}
+                          placeholder="0"
+                          suffix={form.допНаценкаТип === 'percent' ? '%' : '₽'}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Field>
+              </div>
+            </Card>
+
+          </div>
+
+          {/* ── Панель результатов (правая колонка, прилипает) ── */}
+          <div className="w-80 flex-shrink-0">
+            <div className="sticky top-20 space-y-4">
+
+              {/* Итоговая карточка */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="text-white font-bold">Итог расчёта</h3>
+                  {isQuick && (
+                    <span className="text-xs bg-brand-blue/20 text-brand-blue px-2 py-1 rounded-lg">
+                      Предварительный
+                    </span>
+                  )}
+                </div>
+
+                <div className="px-5 py-4 space-y-1">
+                  {/* Разбивка по блокам */}
+                  {result.листы > 0 && (
+                    <ResultRow
+                      label={`Корпуса (${result.листы} л.)`}
+                      value={fmt(result.корпуса)}
+                      small
+                    />
+                  )}
+                  {result.фасады > 0 && (
+                    <ResultRow label="Фасады" value={fmt(result.фасады)} small />
+                  )}
+                  {result.фрезеровка > 0 && (
+                    <ResultRow label="Фрезеровка" value={fmt(result.фрезеровка)} small />
+                  )}
+                  {result.столешница > 0 && (
+                    <ResultRow label="Столешница" value={fmt(result.столешница)} small />
+                  )}
+                  {result.фурнитура > 0 && (
+                    <ResultRow label="Фурнитура" value={fmt(result.фурнитура)} small />
+                  )}
+
+                  <div className="border-t border-white/10 my-2" />
+
+                  <ResultRow label="Мебель итого" value={fmt(result.итогоМебель)} />
+                  <ResultRow
+                    label={`Монтаж (${result.монтажПроцент}%)`}
+                    value={fmt(result.монтаж)}
+                    small
+                  />
+                  <ResultRow label="Доставка" value={fmt(result.доставка)} small />
+
+                  <div className="border-t border-white/10 my-2" />
+
+                  <ResultRow label="Итого" value={fmt(result.итого)} accent="blue" />
+
+                  {result.итогоСНаценкой !== result.итого && (
+                    <ResultRow label="С наценкой" value={fmt(result.итогоСНаценкой)} accent="orange" bold />
+                  )}
+
+                  {/* Итоговая сумма (самая крупная) */}
+                  <div className="bg-brand-blue/10 border border-brand-blue/30 rounded-xl p-4 mt-3 text-center">
+                    <div className="text-white/60 text-xs mb-1">Цена для клиента</div>
+                    <div className="text-white font-black text-2xl">
+                      {fmt(result.итогоСНаценкой)}
+                    </div>
+                  </div>
+
+                  {/* Маржа (только если заполнена себестоимость) */}
+                  {result.маржа !== null && (
+                    <div className={`rounded-xl p-3 mt-2 ${result.маржа >= 0 ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-white/50">Себестоимость</span>
+                        <span className="text-sm text-white/70">{fmt(result.себестоимость)}</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-white/50">Маржа</span>
+                        <span className={`text-sm font-bold ${result.маржа >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {fmt(result.маржа)} ({result.маржаПроцент}%)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Кнопки действий */}
+              <div className="space-y-3">
+                <button
+                  onClick={handleSave}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
+                    saved
+                      ? 'bg-green-500/20 border border-green-500/30 text-green-400'
+                      : 'bg-white/10 hover:bg-white/15 border border-white/20 text-white'
+                  }`}
+                >
+                  {saved ? '✓ Расчёт сохранён' : 'Сохранить расчёт'}
+                </button>
+
+                <button
+                  disabled
+                  className="w-full py-3 rounded-xl font-semibold text-sm bg-brand-blue/40 text-white/50 cursor-not-allowed border border-brand-blue/20"
+                  title="Будет в следующей версии"
+                >
+                  Сформировать КП (PDF) →
+                </button>
+              </div>
+
+              {/* Подсказка */}
+              <p className="text-white/25 text-xs text-center">
+                Расчёты сохраняются в браузере.
+                <br />Посмотреть все — в разделе «История».
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
