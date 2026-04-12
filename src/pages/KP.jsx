@@ -103,7 +103,7 @@ export default function KP() {
 
             <div className="flex gap-3">
               <a
-                href={`/app`}
+                href={`/app?id=${calc?.id}`}
                 className="border border-white/20 hover:border-white/40 text-white/70 hover:text-white
                   font-medium px-4 py-2.5 rounded-xl transition-colors text-sm"
               >

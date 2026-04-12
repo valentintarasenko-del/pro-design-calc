@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import AppHeader from '../components/AppHeader';
 import { calcTotal, fmt } from '../utils/calculations';
-import { loadSettings, defaultForm, saveCalculation } from '../utils/storage';
+import { loadSettings, defaultForm, saveCalculation, loadCalculations } from '../utils/storage';
 
 // ─── Вспомогательные компоненты ─────────────────────────────────────────────
 
@@ -131,7 +131,18 @@ function AdjustRow({ тип, значение, onТип, onЗначение, acc
 export default function Calculator() {
   const settings = useMemo(() => loadSettings(), []);
 
-  const [form, setForm] = useState(() => defaultForm(settings));
+  const [form, setForm] = useState(() => {
+    // Если в URL есть ?id=... — загружаем существующий расчёт для редактирования
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) {
+      const existing = loadCalculations().find(c => c.id === id);
+      if (existing) {
+        // Сливаем с defaultForm чтобы добавить новые поля которых нет в старых расчётах
+        return { ...defaultForm(settings), ...existing };
+      }
+    }
+    return defaultForm(settings);
+  });
   const [saved, setSaved] = useState(false);
 
   // Обновить одно поле формы
