@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # нужно для публикации релиза
+      contents: write
 
     steps:
       - name: Checkout
@@ -43,17 +43,24 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug
 
-      # Переименовываем APK в понятное имя
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk Mebel-ProDesign.apk
 
-      # Публикуем релиз с тегом "latest" — перезаписывается при каждом пуше
+      # Удаляем старый релиз если есть, потом создаём новый
+      - name: Delete old release if exists
+        run: |
+          gh release delete apk --yes 2>/dev/null || true
+          git push origin :refs/tags/apk 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Последняя версия
-          body: Актуальная версия приложения ПроДизайн для Android.
-          prerelease: false
+          tag_name: apk
+          name: Последняя версия APK
+          body: Актуальная версия приложения «Считаем мебель ПроДизайн» для Android.
           make_latest: true
           files: Mebel-ProDesign.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
