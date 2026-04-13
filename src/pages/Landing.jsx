@@ -1,6 +1,6 @@
 // Лендинг-страница для мотивации команды
+import { useState } from 'react';
 
-// Иконки для карточек преимуществ
 function IconClock() {
   return (
     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,50 +28,79 @@ function IconChart() {
   );
 }
 
-// Логотип компании
-function Logo({ size = 'md' }) {
-  const sizes = {
-    sm: 'h-8',
-    md: 'h-12',
-    lg: 'h-16',
-  };
-
+function Logo() {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <div className="bg-brand-blue rounded-lg p-1.5 flex items-center justify-center">
         <span className="text-white font-black text-xs leading-none px-1">ПРО</span>
       </div>
       <div>
-        <div className="text-white font-black text-xl leading-none tracking-tight">Дизайн</div>
-        <div className="text-white/50 text-xs font-medium tracking-wider uppercase">Ремонт и комплектация</div>
+        <div className="text-white font-black text-base sm:text-xl leading-none tracking-tight">Дизайн</div>
+        <div className="text-white/50 text-xs font-medium tracking-wider uppercase hidden sm:block">Ремонт и комплектация</div>
       </div>
     </div>
   );
 }
 
-// Карточка преимущества
 function FeatureCard({ icon, title, description, accent }) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-white/20 transition-all duration-300">
-      <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl mb-6 ${accent}`}>
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8">
+      <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl mb-5 ${accent}`}>
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
-      <p className="text-white/60 leading-relaxed">{description}</p>
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
+      <p className="text-white/60 leading-relaxed text-sm sm:text-base">{description}</p>
     </div>
   );
 }
 
-// Заглушка скриншота приложения
+// Модальное окно инструкции по установке
+function IphoneModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#1A1A2E] border border-white/20 rounded-2xl p-6 w-full max-w-sm"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-2xl mb-3 text-center">🍎</div>
+        <h3 className="text-white font-bold text-lg text-center mb-4">Установка на iPhone</h3>
+        <ol className="space-y-3 text-sm text-white/70">
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">1</span>
+            Откройте сайт в браузере <strong className="text-white">Safari</strong>
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">2</span>
+            Нажмите кнопку <strong className="text-white">«Поделиться»</strong> внизу экрана (квадрат со стрелкой вверх)
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">3</span>
+            Выберите <strong className="text-white">«На экран «Домой»»</strong>
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">4</span>
+            Нажмите <strong className="text-white">«Добавить»</strong> — появится иконка на рабочем столе
+          </li>
+        </ol>
+        <button
+          onClick={onClose}
+          className="mt-5 w-full bg-brand-blue text-white font-semibold py-3 rounded-xl text-sm"
+        >
+          Понятно
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppScreenshot() {
   return (
     <div className="relative mx-auto max-w-2xl">
-      {/* Свечение сзади */}
       <div className="absolute inset-0 bg-brand-blue/20 blur-3xl rounded-full scale-75" />
-
-      {/* Окно браузера */}
       <div className="relative bg-[#0F0F1A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-        {/* Строка браузера */}
         <div className="bg-white/5 px-4 py-3 flex items-center gap-2 border-b border-white/10">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-400/60" />
@@ -79,42 +108,25 @@ function AppScreenshot() {
             <div className="w-3 h-3 rounded-full bg-green-400/60" />
           </div>
           <div className="flex-1 bg-white/5 rounded-md px-3 py-1 text-white/30 text-xs text-center">
-            pro-design-calc.netlify.app
+            pro-design-calc.vercel.app
           </div>
         </div>
-
-        {/* Содержимое */}
         <div className="p-6 space-y-4">
-          {/* Заголовок */}
           <div className="flex items-center justify-between">
             <div className="h-4 bg-white/20 rounded w-32" />
             <div className="h-8 bg-brand-blue/60 rounded-lg w-28" />
           </div>
-
-          {/* Форма расчёта */}
           <div className="grid grid-cols-2 gap-3">
-            {[
-              'Кухня «Смагин», нижняя база',
-              'Верхняя база',
-              'Пеналы',
-              'Фасады — МДФ плёнка',
-            ].map((label, i) => (
+            {['Нижняя база', 'Верхняя база', 'Пеналы', 'Фасады — МДФ'].map((label, i) => (
               <div key={i} className="bg-white/5 rounded-xl p-3">
                 <div className="text-white/40 text-xs mb-2">{label}</div>
                 <div className="h-3 bg-white/15 rounded w-3/4" />
               </div>
             ))}
           </div>
-
-          {/* Итого */}
           <div className="bg-brand-blue/20 border border-brand-blue/40 rounded-xl p-4 flex justify-between items-center">
             <span className="text-white/70 text-sm">Итого к расчёту</span>
             <span className="text-white font-bold text-lg">347 500 ₽</span>
-          </div>
-
-          {/* Кнопка */}
-          <div className="h-10 bg-brand-orange/80 rounded-xl flex items-center justify-center">
-            <div className="h-3 bg-white/60 rounded w-32" />
           </div>
         </div>
       </div>
@@ -123,164 +135,171 @@ function AppScreenshot() {
 }
 
 export default function Landing() {
+  const [showIphone, setShowIphone] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0D0D1A]">
+      {showIphone && <IphoneModal onClose={() => setShowIphone(false)} />}
 
       {/* Навигация */}
-      <nav className="border-b border-white/10 backdrop-blur-sm sticky top-0 z-50 bg-[#0D0D1A]/90">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <nav className="border-b border-white/10 backdrop-blur-sm sticky top-0 z-40 bg-[#0D0D1A]/90">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Logo />
           <a
             href="/app"
-            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm"
+            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-semibold px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-colors text-xs sm:text-sm whitespace-nowrap"
           >
-            Открыть приложение →
+            <span className="hidden sm:inline">Открыть приложение →</span>
+            <span className="sm:hidden">Открыть →</span>
           </a>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 bg-brand-blue/15 border border-brand-blue/30 rounded-full px-4 py-2 text-sm text-brand-blue mb-8 font-medium">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-12 sm:pb-16 text-center">
+        <div className="inline-flex items-center gap-2 bg-brand-blue/15 border border-brand-blue/30 rounded-full px-4 py-2 text-sm text-brand-blue mb-6 sm:mb-8 font-medium">
           <span className="w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
           Сервис для команды ПроДизайн
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-black text-white leading-tight mb-6 tracking-tight">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight mb-4 sm:mb-6 tracking-tight">
           ПроДизайн —<br />
           <span className="text-brand-blue">считаем мебель</span>
         </h1>
 
-        <p className="text-xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-base sm:text-xl text-white/60 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
           Забудьте про ручной расчёт в Excel и часы за сметой.
           Вводите размеры — получаете красивое КП для клиента.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* Основная кнопка */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
           <a
             href="/app"
-            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-lg"
+            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-base sm:text-lg"
           >
             Открыть веб-приложение
           </a>
           <a
             href="#features"
-            className="border border-white/20 hover:border-white/40 text-white/80 hover:text-white font-semibold px-8 py-4 rounded-2xl transition-colors text-lg"
+            className="border border-white/20 hover:border-white/40 text-white/80 hover:text-white font-semibold px-8 py-4 rounded-2xl transition-colors text-base sm:text-lg"
           >
             Узнать подробнее
           </a>
         </div>
 
+        {/* ── Установить как приложение ── */}
+        <div className="max-w-lg mx-auto">
+          <p className="text-white/30 text-xs uppercase tracking-wider mb-3 font-medium">
+            Установить как приложение
+          </p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {/* Компьютер */}
+            <a
+              href="/app"
+              className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all"
+            >
+              <span className="text-2xl">🖥</span>
+              <span className="text-white font-semibold text-xs sm:text-sm">Компьютер</span>
+              <span className="text-white/40 text-xs text-center leading-tight">Открыть в браузере</span>
+            </a>
+
+            {/* Android */}
+            <a
+              href="https://github.com/valentintarasenko-del/pro-design-calc/actions"
+              target="_blank"
+              rel="noreferrer"
+              className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all"
+            >
+              <span className="text-2xl">🤖</span>
+              <span className="text-white font-semibold text-xs sm:text-sm">Android</span>
+              <span className="text-white/40 text-xs text-center leading-tight">Скачать APK</span>
+            </a>
+
+            {/* iPhone */}
+            <button
+              onClick={() => setShowIphone(true)}
+              className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all w-full"
+            >
+              <span className="text-2xl">🍎</span>
+              <span className="text-white font-semibold text-xs sm:text-sm">iPhone</span>
+              <span className="text-white/40 text-xs text-center leading-tight">Добавить через Safari</span>
+            </button>
+          </div>
+        </div>
+
         {/* Скриншот */}
-        <div className="mt-16">
+        <div className="mt-12 sm:mt-16">
           <AppScreenshot />
         </div>
       </section>
 
       {/* Три преимущества */}
-      <section id="features" className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+      <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <div className="text-center mb-10 sm:mb-12">
+          <h2 className="text-2xl sm:text-4xl font-black text-white mb-4">
             Почему это важно для нас
           </h2>
-          <p className="text-white/50 text-lg">Три причины начать пользоваться прямо сейчас</p>
+          <p className="text-white/50 text-base sm:text-lg">Три причины начать пользоваться прямо сейчас</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
           <FeatureCard
             icon={<IconClock />}
             accent="bg-brand-blue/20 text-brand-blue"
             title="Считаем кухню за 3 минуты вместо часа"
-            description="Больше не нужно сидеть с калькулятором и вспоминать формулы. Вводите метры — приложение считает листы ЛДСП, фасады, монтаж и всё остальное само."
+            description="Больше не нужно сидеть с калькулятором. Вводите метры — приложение считает листы ЛДСП, фасады, монтаж само."
           />
           <FeatureCard
             icon={<IconDocument />}
             accent="bg-brand-orange/20 text-brand-orange"
             title="Красивое КП клиенту в один клик"
-            description="Никаких таблиц Excel и скриншотов. Клиент получает профессиональное PDF с логотипом, фото объекта и понятным описанием — это продаёт."
+            description="Никаких таблиц Excel. Клиент получает профессиональное PDF с логотипом, фото объекта и понятным описанием."
           />
           <FeatureCard
             icon={<IconChart />}
             accent="bg-green-500/20 text-green-400"
             title="Видите маржу по каждому заказу"
-            description="Сразу видно: сколько стоит нам, сколько стоит клиенту, и сколько мы зарабатываем. Больше осознанных решений, меньше убыточных заказов."
+            description="Сразу видно: сколько стоит нам, сколько клиенту, и сколько зарабатываем. Больше осознанных решений."
           />
         </div>
       </section>
 
-      {/* Как это работает */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-10 md:p-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-              Как это работает
-            </h2>
+      {/* Как работает */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-10 md:p-16">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-4xl font-black text-white mb-4">Как это работает</h2>
           </div>
-
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             {[
-              { step: '01', title: 'Вводите размеры', desc: 'Длина баз, пеналы, материал фасадов — только нужное' },
-              { step: '02', title: 'Приложение считает', desc: 'Листы ЛДСП, фасады, монтаж, доставка — автоматически' },
-              { step: '03', title: 'Проверяете итог', desc: 'Видите полную смету, маржу, можете скорректировать цену' },
-              { step: '04', title: 'Отправляете КП', desc: 'Скачиваете PDF и отправляете клиенту — красиво и быстро' },
+              { step: '01', title: 'Вводите размеры', desc: 'Длина баз, пеналы, материал фасадов' },
+              { step: '02', title: 'Приложение считает', desc: 'Листы ЛДСП, фасады, монтаж — автоматически' },
+              { step: '03', title: 'Проверяете итог', desc: 'Видите смету, маржу, корректируете цену' },
+              { step: '04', title: 'Отправляете КП', desc: 'Скачиваете PDF и отправляете клиенту' },
             ].map(({ step, title, desc }) => (
               <div key={step} className="text-center">
-                <div className="w-12 h-12 bg-brand-blue/20 border border-brand-blue/30 rounded-2xl flex items-center justify-center text-brand-blue font-black text-sm mx-auto mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-brand-blue/20 border border-brand-blue/30 rounded-2xl flex items-center justify-center text-brand-blue font-black text-xs sm:text-sm mx-auto mb-3">
                   {step}
                 </div>
-                <h3 className="text-white font-bold mb-2">{title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+                <h3 className="text-white font-bold mb-1 text-sm sm:text-base">{title}</h3>
+                <p className="text-white/50 text-xs sm:text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Режимы расчёта */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Быстрый */}
-          <div className="bg-brand-blue/10 border border-brand-blue/30 rounded-2xl p-8">
-            <div className="inline-flex items-center gap-2 bg-brand-blue/20 text-brand-blue text-sm font-semibold px-3 py-1.5 rounded-lg mb-6">
-              ⚡ Быстрый расчёт
-            </div>
-            <h3 className="text-2xl font-black text-white mb-3">Для ранних переговоров</h3>
-            <p className="text-white/60 mb-6">Когда клиент только пришёл и нужна примерная цифра за 2 минуты. Вводите минимум данных — получаете «предварительный расчёт» с понятной оговоркой.</p>
-            <ul className="space-y-2 text-white/70 text-sm">
-              <li>✓ Минимум полей для заполнения</li>
-              <li>✓ Статистические значения подставляются автоматически</li>
-              <li>✓ КП помечается как «Предварительный»</li>
-            </ul>
-          </div>
-
-          {/* Точный */}
-          <div className="bg-brand-orange/10 border border-brand-orange/30 rounded-2xl p-8">
-            <div className="inline-flex items-center gap-2 bg-brand-orange/20 text-brand-orange text-sm font-semibold px-3 py-1.5 rounded-lg mb-6">
-              🎯 Точный расчёт
-            </div>
-            <h3 className="text-2xl font-black text-white mb-3">Для финального КП</h3>
-            <p className="text-white/60 mb-6">Когда есть чертёж и клиент готов к сделке. Заполняете все параметры — получаете точную смету и профессиональное КП с печатью.</p>
-            <ul className="space-y-2 text-white/70 text-sm">
-              <li>✓ Все блоки: корпуса, фасады, фурнитура, монтаж</li>
-              <li>✓ Себестоимость и маржа</li>
-              <li>✓ Итоговое КП в PDF</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="bg-gradient-to-br from-brand-blue/20 to-brand-blue/5 border border-brand-blue/30 rounded-3xl p-12 text-center">
-          <h2 className="text-4xl font-black text-white mb-4">
-            Готовы попробовать?
-          </h2>
-          <p className="text-white/60 text-lg mb-8 max-w-xl mx-auto">
-            Откройте приложение и сделайте первый расчёт прямо сейчас. Без регистрации, без настройки.
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <div className="bg-gradient-to-br from-brand-blue/20 to-brand-blue/5 border border-brand-blue/30 rounded-3xl p-8 sm:p-12 text-center">
+          <h2 className="text-2xl sm:text-4xl font-black text-white mb-4">Готовы попробовать?</h2>
+          <p className="text-white/60 text-base sm:text-lg mb-8 max-w-xl mx-auto">
+            Откройте приложение и сделайте первый расчёт прямо сейчас. Без регистрации.
           </p>
           <a
             href="/app"
-            className="inline-block bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-10 py-4 rounded-2xl transition-colors text-lg"
+            className="inline-block bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-8 sm:px-10 py-4 rounded-2xl transition-colors text-base sm:text-lg"
           >
             Открыть приложение →
           </a>
@@ -289,8 +308,8 @@ export default function Landing() {
 
       {/* Футер */}
       <footer className="border-t border-white/10 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo size="sm" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <Logo />
           <p className="text-white/30 text-sm text-center">
             Внутренний сервис компании ПроДизайн · Ремонт и комплектация
           </p>

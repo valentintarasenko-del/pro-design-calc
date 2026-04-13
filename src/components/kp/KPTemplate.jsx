@@ -179,7 +179,7 @@ export default function KPTemplate({ calc }) {
       </div>
 
       {/* Тело страницы 1 */}
-      <div style={{ padding: '32px 40px' }}>
+      <div style={{ padding: '24px 32px' }}>
 
         {/* Предварительный расчёт — бейдж */}
         {isQuick && (
@@ -220,7 +220,7 @@ export default function KPTemplate({ calc }) {
         {/* Блок с ценой */}
         <div style={{
           background: `linear-gradient(135deg, ${BLUE} 0%, #1976D2 100%)`,
-          borderRadius: 16, padding: '28px 36px', marginBottom: 28,
+          borderRadius: 16, padding: '20px 28px', marginBottom: 20,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }} className="no-break">
           <div>
@@ -275,7 +275,7 @@ export default function KPTemplate({ calc }) {
       </div>
 
       {/* ══ СТРАНИЦА 2: ДЕТАЛИЗАЦИЯ ═══════════════════════════════════════ */}
-      <div className="page-break" style={{ padding: '32px 40px' }}>
+      <div className="page-break" style={{ padding: '24px 32px' }}>
 
         {/* Маленькая шапка на второй странице */}
         <div style={{
