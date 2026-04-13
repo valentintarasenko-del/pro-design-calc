@@ -80,7 +80,7 @@ export default function Settings() {
     <div className="min-h-screen bg-[#0D0D1A]">
       <AppHeader />
 
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <h1 className="text-2xl font-black text-white mb-2">Настройки</h1>
         <p className="text-white/50 text-sm mb-8">
           Заполните цены один раз — приложение будет подставлять их в каждый расчёт автоматически.
@@ -136,18 +136,18 @@ export default function Settings() {
               </div>
 
               {settings.прайсФасадов.map(item => (
-                <div key={item.id} className="flex gap-3 items-center">
-                  <div className="flex-1">
+                <div key={item.id} className="flex gap-2 sm:gap-3 items-center">
+                  <div className="flex-1 min-w-0">
                     <input
                       type="text"
                       value={item.материал}
                       onChange={e => updateFasadPrice(item.id, 'материал', e.target.value)}
                       placeholder="Название материала"
                       className="w-full bg-white/5 border border-white/15 hover:border-white/30 focus:border-brand-blue
-                        text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm outline-none transition-colors"
+                        text-white placeholder-white/30 rounded-xl px-3 sm:px-4 py-3 text-sm outline-none transition-colors"
                     />
                   </div>
-                  <div className="w-36">
+                  <div className="w-28 sm:w-36 flex-shrink-0">
                     <NumInput
                       value={item.цена}
                       onChange={v => updateFasadPrice(item.id, 'цена', v)}
@@ -157,7 +157,7 @@ export default function Settings() {
                   </div>
                   <button
                     onClick={() => removeFasadRow(item.id)}
-                    className="w-8 h-8 flex items-center justify-center text-white/30 hover:text-red-400 transition-colors text-xl flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center text-white/30 hover:text-red-400 active:text-red-400 transition-colors text-xl flex-shrink-0"
                   >
                     ×
                   </button>
@@ -179,7 +179,7 @@ export default function Settings() {
               <h2 className="text-white font-bold">Монтаж и доставка (по умолчанию)</h2>
               <p className="text-white/40 text-xs mt-1">Можно изменить для каждого расчёта отдельно</p>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Монтаж по умолчанию">
                 <NumInput
                   value={settings.монтажПроцент}
