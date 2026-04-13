@@ -54,7 +54,7 @@ function FeatureCard({ icon, title, description, accent }) {
   );
 }
 
-const APK_URL = 'https://github.com/valentintarasenko-del/pro-design-calc/releases/latest/download/ProDesign.apk';
+const APK_URL = 'https://github.com/valentintarasenko-del/pro-design-calc/releases/latest/download/Mebel-ProDesign.apk';
 
 // Модальное окно инструкции для Android
 function AndroidModal({ onClose }) {
