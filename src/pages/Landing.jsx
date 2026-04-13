@@ -54,7 +54,61 @@ function FeatureCard({ icon, title, description, accent }) {
   );
 }
 
-// Модальное окно инструкции по установке
+const APK_URL = 'https://github.com/valentintarasenko-del/pro-design-calc/releases/latest/download/ProDesign.apk';
+
+// Модальное окно инструкции для Android
+function AndroidModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#1A1A2E] border border-white/20 rounded-2xl p-6 w-full max-w-sm"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-2xl mb-3 text-center">🤖</div>
+        <h3 className="text-white font-bold text-lg text-center mb-1">Установка на Android</h3>
+        <p className="text-white/40 text-xs text-center mb-4">Это не Play Market — устанавливается как APK-файл</p>
+
+        <ol className="space-y-3 text-sm text-white/70 mb-5">
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">1</span>
+            Нажмите <strong className="text-white">«Скачать APK»</strong> ниже — файл загрузится на телефон
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">2</span>
+            Откройте файл из уведомлений или папки <strong className="text-white">«Загрузки»</strong>
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">3</span>
+            Если появится предупреждение — нажмите <strong className="text-white">«Установить всё равно»</strong> (это безопасно, приложение наше)
+          </li>
+          <li className="flex gap-3">
+            <span className="bg-brand-blue/30 text-brand-blue font-bold w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs">4</span>
+            Найдите иконку <strong className="text-white">«Считаем мебель»</strong> на рабочем столе и запустите
+          </li>
+        </ol>
+
+        <a
+          href={APK_URL}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 w-full bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-3 rounded-xl text-sm mb-2"
+        >
+          ⬇ Скачать APK
+        </a>
+        <button
+          onClick={onClose}
+          className="w-full text-white/40 hover:text-white/60 py-2 text-sm transition-colors"
+        >
+          Отмена
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Модальное окно инструкции по установке iPhone
 function IphoneModal({ onClose }) {
   return (
     <div
@@ -136,9 +190,11 @@ function AppScreenshot() {
 
 export default function Landing() {
   const [showIphone, setShowIphone] = useState(false);
+  const [showAndroid, setShowAndroid] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#0D0D1A]">
+      {showAndroid && <AndroidModal onClose={() => setShowAndroid(false)} />}
       {showIphone && <IphoneModal onClose={() => setShowIphone(false)} />}
 
       {/* Навигация */}
@@ -205,14 +261,14 @@ export default function Landing() {
             </a>
 
             {/* Android */}
-            <a
-              href="https://github.com/valentintarasenko-del/pro-design-calc/releases/latest/download/ProDesign.apk"
-              className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all"
+            <button
+              onClick={() => setShowAndroid(true)}
+              className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all w-full"
             >
               <span className="text-2xl">🤖</span>
               <span className="text-white font-semibold text-xs sm:text-sm">Android</span>
               <span className="text-white/40 text-xs text-center leading-tight">Скачать APK</span>
-            </a>
+            </button>
 
             {/* iPhone */}
             <button
