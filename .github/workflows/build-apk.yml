@@ -3,57 +3,57 @@ name: Сборка Android APK
 on:
   push:
     branches: [main]
-  # Можно запустить вручную
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # нужно для публикации релиза
 
     steps:
-      # 1. Скачиваем код из репозитория
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      # 3. Устанавливаем зависимости
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      # 4. Собираем сайт (создаёт папку dist/)
       - name: Build web app
         run: npm run build
 
-      # 5. Синхронизируем Capacitor (копирует dist/ в Android проект)
       - name: Sync Capacitor
         run: npx cap sync android
 
-      # 6. Устанавливаем JDK для Android
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # 7. Даём права на запуск Gradle
       - name: Make Gradle executable
         run: chmod +x android/gradlew
 
-      # 8. Собираем APK (debug — не требует подписи)
       - name: Build APK
         working-directory: android
         run: ./gradlew assembleDebug
 
-      # 9. Сохраняем APK как артефакт для скачивания
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      # Переименовываем APK в понятное имя
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ProDesign.apk
+
+      # Публикуем релиз с тегом "latest" — перезаписывается при каждом пуше
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ProDesign-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          tag_name: latest
+          name: Последняя версия
+          body: Актуальная версия приложения ПроДизайн для Android.
+          prerelease: false
+          make_latest: true
+          files: ProDesign.apk

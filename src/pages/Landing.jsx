@@ -206,9 +206,7 @@ export default function Landing() {
 
             {/* Android */}
             <a
-              href="https://github.com/valentintarasenko-del/pro-design-calc/actions"
-              target="_blank"
-              rel="noreferrer"
+              href="https://github.com/valentintarasenko-del/pro-design-calc/releases/latest/download/ProDesign.apk"
               className="flex flex-col items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-2xl px-3 py-4 transition-all"
             >
               <span className="text-2xl">🤖</span>
