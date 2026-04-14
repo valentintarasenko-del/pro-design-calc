@@ -1,7 +1,7 @@
 // Страница настроек: прайс на материалы, коэффициенты, значения по умолчанию
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppHeader from '../components/AppHeader';
-import { loadSettings, saveSettings } from '../utils/storage';
+import { loadSettings, saveSettings, defaultSettings } from '../utils/storage';
 
 function Field({ label, hint, children }) {
   return (
@@ -38,8 +38,13 @@ function NumInput({ value, onChange, placeholder, suffix }) {
 }
 
 export default function Settings() {
-  const [settings, setSettings] = useState(() => loadSettings());
+  const [settings, setSettings] = useState({ ...defaultSettings });
   const [savedMsg, setSavedMsg] = useState('');
+
+  // Загружаем настройки из Supabase при открытии страницы
+  useEffect(() => {
+    loadSettings().then(s => setSettings(s));
+  }, []);
 
   const set = (field, value) => setSettings(s => ({ ...s, [field]: value }));
 
@@ -70,8 +75,8 @@ export default function Settings() {
   };
 
   // Сохранить настройки
-  const handleSave = () => {
-    saveSettings(settings);
+  const handleSave = async () => {
+    await saveSettings(settings);
     setSavedMsg('Настройки сохранены!');
     setTimeout(() => setSavedMsg(''), 3000);
   };

@@ -15,20 +15,27 @@ export const defaultSettings = {
   ],
 };
 
-// ── Настройки (localStorage) ─────────────────────────────────────────────────
+// ── Настройки (Supabase) ──────────────────────────────────────────────────────
 
-export function loadSettings() {
-  try {
-    const raw = localStorage.getItem('pd_settings');
-    if (!raw) return { ...defaultSettings };
-    return { ...defaultSettings, ...JSON.parse(raw) };
-  } catch {
-    return { ...defaultSettings };
-  }
+// Загрузить настройки (общие для всех устройств)
+export async function loadSettings() {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('data')
+    .eq('id', 'default')
+    .single();
+
+  if (error || !data) return { ...defaultSettings };
+  return { ...defaultSettings, ...data.data };
 }
 
-export function saveSettings(settings) {
-  localStorage.setItem('pd_settings', JSON.stringify(settings));
+// Сохранить настройки
+export async function saveSettings(settings) {
+  const { error } = await supabase
+    .from('settings')
+    .upsert({ id: 'default', data: settings }, { onConflict: 'id' });
+
+  if (error) console.error('Supabase saveSettings:', error);
 }
 
 // ── Расчёты (Supabase) ───────────────────────────────────────────────────────

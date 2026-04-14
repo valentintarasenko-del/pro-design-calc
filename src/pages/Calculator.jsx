@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import AppHeader from '../components/AppHeader';
 import { calcTotal, fmt } from '../utils/calculations';
-import { loadSettings, defaultForm, saveCalculation, loadCalculationById } from '../utils/storage';
+import { loadSettings, saveSettings, defaultSettings, defaultForm, saveCalculation, loadCalculationById } from '../utils/storage';
 
 // ─── Вспомогательные компоненты ─────────────────────────────────────────────
 
@@ -129,7 +129,12 @@ function AdjustRow({ тип, значение, onТип, onЗначение, acc
 // ─── Основной компонент ──────────────────────────────────────────────────────
 
 export default function Calculator() {
-  const settings = useMemo(() => loadSettings(), []);
+  const [settings, setSettings] = useState({ ...defaultSettings });
+
+  // Загружаем настройки из Supabase при старте
+  useEffect(() => {
+    loadSettings().then(s => setSettings(s));
+  }, []);
 
   const [form, setForm] = useState(() => defaultForm(settings));
   const [saved, setSaved] = useState(false);
