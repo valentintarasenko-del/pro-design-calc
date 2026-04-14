@@ -112,23 +112,29 @@ export default function KP() {
     }
   };
 
-  // Android: сохранить файл в хранилище и открыть через системный просмотрщик
+  // Android: сохранить файл и открыть в PDF-просмотрщике
   const handleAndroidSave = async () => {
     if (!docRef.current) return;
     setLoading(true);
     try {
       const { base64, filename } = await buildPDF();
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { FileOpener } = await import('@capacitor-community/file-opener');
+
       const saved = await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.External, // доступно через Мои файлы → Android/data/...
+        directory: Directory.Documents,
       });
-      // Открываем файл через системный Intent — показывает PDF-просмотрщики и "Сохранить в..."
-      window.open(saved.uri, '_system');
+
+      // Открываем PDF в системном просмотрщике — из него можно сохранить в Downloads
+      await FileOpener.open({
+        filePath: saved.uri,
+        contentType: 'application/pdf',
+      });
     } catch (e) {
       console.error('Android save error:', e);
-      alert('Не удалось сохранить PDF. Попробуйте кнопку «Отправить».');
+      alert('Не удалось открыть PDF. Попробуйте кнопку «Отправить».');
     } finally {
       setLoading(false);
     }
