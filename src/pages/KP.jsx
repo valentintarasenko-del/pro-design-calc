@@ -48,7 +48,7 @@ function MobileScaledPreview({ docRef, calc }) {
 }
 import AppHeader from '../components/AppHeader';
 import KPTemplate from '../components/kp/KPTemplate';
-import { loadCalculations } from '../utils/storage';
+import { loadCalculationById } from '../utils/storage';
 
 export default function KP() {
   const [calc, setCalc] = useState(null);
@@ -59,9 +59,9 @@ export default function KP() {
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) {
-      const list = loadCalculations();
-      const found = list.find(c => c.id === id);
-      if (found) setCalc(found);
+      loadCalculationById(id).then(found => {
+        if (found) setCalc(found);
+      });
     }
   }, []);
 

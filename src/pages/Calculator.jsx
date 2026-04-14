@@ -1,8 +1,8 @@
 // Главная страница — расчёт стоимости мебели
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppHeader from '../components/AppHeader';
 import { calcTotal, fmt } from '../utils/calculations';
-import { loadSettings, defaultForm, saveCalculation, loadCalculations } from '../utils/storage';
+import { loadSettings, defaultForm, saveCalculation, loadCalculationById } from '../utils/storage';
 
 // ─── Вспомогательные компоненты ─────────────────────────────────────────────
 
@@ -131,19 +131,21 @@ function AdjustRow({ тип, значение, onТип, onЗначение, acc
 export default function Calculator() {
   const settings = useMemo(() => loadSettings(), []);
 
-  const [form, setForm] = useState(() => {
-    // Если в URL есть ?id=... — загружаем существующий расчёт для редактирования
+  const [form, setForm] = useState(() => defaultForm(settings));
+  const [saved, setSaved] = useState(false);
+
+  // Если в URL есть ?id=... — загружаем существующий расчёт из Supabase
+  useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) {
-      const existing = loadCalculations().find(c => c.id === id);
-      if (existing) {
-        // Сливаем с defaultForm чтобы добавить новые поля которых нет в старых расчётах
-        return { ...defaultForm(settings), ...existing };
-      }
+      loadCalculationById(id).then(existing => {
+        if (existing) {
+          // Сливаем с defaultForm чтобы добавить новые поля которых нет в старых расчётах
+          setForm(f => ({ ...f, ...existing }));
+        }
+      });
     }
-    return defaultForm(settings);
-  });
-  const [saved, setSaved] = useState(false);
+  }, []);
 
   // Обновить одно поле формы
   const set = (field, value) => {
@@ -205,15 +207,15 @@ export default function Calculator() {
   };
 
   // Сохранить расчёт
-  const handleSave = () => {
-    saveCalculation({ ...form, result });
+  const handleSave = async () => {
+    await saveCalculation({ ...form, result });
     setSaved(true);
   };
 
   // Сохранить и перейти к КП
-  const handleGenerateKP = () => {
+  const handleGenerateKP = async () => {
     const calcToSave = { ...form, result };
-    saveCalculation(calcToSave);
+    await saveCalculation(calcToSave);
     window.location.href = `/kp?id=${form.id}`;
   };
 
@@ -634,7 +636,7 @@ export default function Calculator() {
 
               {/* Подсказка */}
               <p className="text-white/25 text-xs text-center">
-                Расчёты сохраняются в браузере.
+                Расчёты сохраняются в облаке.
                 <br />Посмотреть все — в разделе «История».
               </p>
             </div>

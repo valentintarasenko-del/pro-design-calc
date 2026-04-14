@@ -1,11 +1,12 @@
-// Работа с localStorage: настройки и история расчётов
+// Настройки — хранятся локально на устройстве (localStorage)
+// Расчёты — хранятся в Supabase (общие для всех устройств)
+import { supabase } from './supabase';
 
 export const defaultSettings = {
-  ценаЛиста: 0,       // цена одного листа ЛДСП (руб)
-  коэф: 1.6,          // метров базы на один лист (настраивается под Антона)
-  монтажПроцент: 15,  // монтаж по умолчанию
-  доставка: 6000,     // доставка по умолчанию
-  // Прайс на фасады: список материалов с ценой за м²
+  ценаЛиста: 0,
+  коэф: 1.6,
+  монтажПроцент: 15,
+  доставка: 6000,
   прайсФасадов: [
     { id: 1, материал: 'ЛДСП', цена: '' },
     { id: 2, материал: 'МДФ плёнка', цена: '' },
@@ -14,12 +15,13 @@ export const defaultSettings = {
   ],
 };
 
+// ── Настройки (localStorage) ─────────────────────────────────────────────────
+
 export function loadSettings() {
   try {
     const raw = localStorage.getItem('pd_settings');
     if (!raw) return { ...defaultSettings };
-    const saved = JSON.parse(raw);
-    return { ...defaultSettings, ...saved };
+    return { ...defaultSettings, ...JSON.parse(raw) };
   } catch {
     return { ...defaultSettings };
   }
@@ -29,78 +31,81 @@ export function saveSettings(settings) {
   localStorage.setItem('pd_settings', JSON.stringify(settings));
 }
 
-// История расчётов
-export function loadCalculations() {
-  try {
-    const raw = localStorage.getItem('pd_calculations');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
+// ── Расчёты (Supabase) ───────────────────────────────────────────────────────
+
+// Загрузить все расчёты (от новых к старым)
+export async function loadCalculations() {
+  const { data, error } = await supabase
+    .from('calculations')
+    .select('data, created_at')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (error) {
+    console.error('Supabase loadCalculations:', error);
     return [];
   }
+  return data.map(row => row.data);
 }
 
-export function saveCalculation(calc) {
-  const list = loadCalculations();
-  const idx = list.findIndex(c => c.id === calc.id);
-  if (idx >= 0) {
-    list[idx] = calc;
-  } else {
-    list.unshift(calc);
-  }
-  // Хранить не более 100 расчётов
-  localStorage.setItem('pd_calculations', JSON.stringify(list.slice(0, 100)));
+// Загрузить один расчёт по id
+export async function loadCalculationById(id) {
+  const { data, error } = await supabase
+    .from('calculations')
+    .select('data')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) return null;
+  return data.data;
 }
 
-export function deleteCalculation(id) {
-  const list = loadCalculations().filter(c => c.id !== id);
-  localStorage.setItem('pd_calculations', JSON.stringify(list));
+// Сохранить или обновить расчёт
+export async function saveCalculation(calc) {
+  const { error } = await supabase
+    .from('calculations')
+    .upsert({ id: calc.id, data: calc }, { onConflict: 'id' });
+
+  if (error) console.error('Supabase saveCalculation:', error);
 }
 
-// Начальное состояние формы расчёта
+// Удалить расчёт
+export async function deleteCalculation(id) {
+  const { error } = await supabase
+    .from('calculations')
+    .delete()
+    .eq('id', id);
+
+  if (error) console.error('Supabase deleteCalculation:', error);
+}
+
+// ── Начальная форма расчёта ──────────────────────────────────────────────────
+
 export function defaultForm(settings) {
   return {
     id: Date.now().toString(),
-    режим: 'quick',         // 'quick' | 'detailed'
+    режим: 'quick',
     клиент: '',
     объект: '',
     изображение: null,
-
-    // Корпуса
     нижняя: '',
     верхняя: '',
     пеналы: '',
-
-    // Фасады — список позиций
     фасады: [{ id: Date.now(), материал: '', площадь: '', цена: '' }],
-
-    // Фрезеровка
     фрезеровкаВкл: false,
     фрезеровкаОбъём: '',
     фрезеровкаЦена: '',
-
-    // Ручные позиции
     столешница: '',
     фурнитура: '',
-
-    // Монтаж и доставка берём из настроек
     монтажПроцент: settings.монтажПроцент,
     доставка: settings.доставка,
-
-    // Финансы и наценки
     себестоимость: '',
-
-    // Скрытая наценка — клиент не видит, равномерно распределяется по статьям
-    наценкаСкрытаяТип: 'none',   // 'none' | 'percent' | 'sum'
+    наценкаСкрытаяТип: 'none',
     наценкаСкрытая: '',
-
-    // Видимая наценка — отдельная строка в КП (доп. услуги, сложность)
-    наценкаВидимаяТип: 'none',   // 'none' | 'percent' | 'sum'
+    наценкаВидимаяТип: 'none',
     наценкаВидимая: '',
-
-    // Скидка — отдельная строка в КП со знаком минус
-    скидкаТип: 'none',           // 'none' | 'percent' | 'sum'
+    скидкаТип: 'none',
     скидка: '',
-
     createdAt: new Date().toISOString(),
   };
 }

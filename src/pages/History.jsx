@@ -1,17 +1,25 @@
 // Страница истории расчётов
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppHeader from '../components/AppHeader';
 import { loadCalculations, deleteCalculation } from '../utils/storage';
 import { fmt } from '../utils/calculations';
 
 export default function History() {
-  const [list, setList] = useState(() => loadCalculations());
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (e, id) => {
+  useEffect(() => {
+    loadCalculations().then(data => {
+      setList(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
     if (!confirm('Удалить этот расчёт?')) return;
-    deleteCalculation(id);
-    setList(loadCalculations());
+    await deleteCalculation(id);
+    setList(prev => prev.filter(c => c.id !== id));
   };
 
   const handleOpen = (id) => {
@@ -45,7 +53,9 @@ export default function History() {
           </a>
         </div>
 
-        {list.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-24 text-white/40">Загрузка...</div>
+        ) : list.length === 0 ? (
           <div className="text-center py-24">
             <div className="text-5xl mb-4">📋</div>
             <h2 className="text-xl font-bold text-white/60 mb-2">Расчётов пока нет</h2>
@@ -119,7 +129,7 @@ export default function History() {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
