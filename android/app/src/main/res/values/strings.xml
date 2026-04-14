@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">ПроДизайн</string>
-    <string name="title_activity_main">ПроДизайн</string>
+    <string name="app_name">Мебель ПроДизайн</string>
+    <string name="title_activity_main">Мебель ПроДизайн</string>
     <string name="package_name">ru.prodesign.calc</string>
     <string name="custom_url_scheme">ru.prodesign.calc</string>
 </resources>

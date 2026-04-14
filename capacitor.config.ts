@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   // Уникальный ID приложения
   appId: 'ru.prodesign.calc',
-  appName: 'ПроДизайн',
+  appName: 'Мебель ПроДизайн',
   // Папка со сборкой сайта
   webDir: 'dist',
   server: {

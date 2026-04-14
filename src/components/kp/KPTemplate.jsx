@@ -204,13 +204,19 @@ export default function KPTemplate({ calc }) {
         )}
         {!calc.объект && <div style={{ marginBottom: 24 }} />}
 
-        {/* Фото объекта */}
+        {/* Фото объекта — фиксированная высота, изображение вписано без обрезки */}
         {calc.изображение ? (
-          <img
-            src={calc.изображение}
-            alt="Фото объекта"
-            style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 12, marginBottom: 24 }}
-          />
+          <div style={{
+            height: 200, borderRadius: 12, marginBottom: 24,
+            background: '#F8FAFC', overflow: 'hidden',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <img
+              src={calc.изображение}
+              alt="Фото объекта"
+              style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }}
+            />
+          </div>
         ) : (
           <div style={{ marginBottom: 24 }}>
             <PhotoPlaceholder />
