@@ -70,63 +70,89 @@ export default function KP() {
     }
   }, []);
 
-  // Скачать PDF через html2pdf.js
+  const isNative = Capacitor.isNativePlatform();
+
+  // Вспомогательная: генерирует base64 PDF и возвращает данные
+  const buildPDF = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
+    const clientName = calc?.клиент || calc?.объект || 'КП';
+    const filename = `КП ПроДизайн — ${clientName}.pdf`;
+    const options = {
+      margin: 0,
+      filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] },
+    };
+    const dataUri = await html2pdf().set(options).from(docRef.current).output('datauristring');
+    return { base64: dataUri.split(',')[1], filename, options, html2pdf };
+  };
+
+  // Десктоп: обычное скачивание
   const handleDownloadPDF = async () => {
     if (!docRef.current) return;
     setLoading(true);
-
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-
       const clientName = calc?.клиент || calc?.объект || 'КП';
       const filename = `КП ПроДизайн — ${clientName}.pdf`;
-
-      const options = {
-        margin: 0,
-        filename,
+      await html2pdf().set({
+        margin: 0, filename,
         image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          backgroundColor: '#ffffff',
-          windowWidth: 794,
-        },
-        jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'portrait',
-        },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', windowWidth: 794 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
-      };
-
-      if (Capacitor.isNativePlatform()) {
-        // Android: сохраняем во временный файл и открываем системный диалог "Поделиться"
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        const { Share } = await import('@capacitor/share');
-
-        const dataUri = await html2pdf().set(options).from(docRef.current).output('datauristring');
-        const base64Data = dataUri.split(',')[1];
-        const tempPath = `kp_${Date.now()}.pdf`;
-
-        const saved = await Filesystem.writeFile({
-          path: tempPath,
-          data: base64Data,
-          directory: Directory.Cache,
-        });
-
-        await Share.share({
-          title: filename,
-          url: saved.uri,
-          dialogTitle: 'Сохранить или отправить PDF',
-        });
-      } else {
-        // Десктоп и браузеры — обычное скачивание
-        await html2pdf().set(options).from(docRef.current).save();
-      }
+      }).from(docRef.current).save();
     } catch (e) {
       console.error('PDF error:', e);
-      alert('Ошибка при создании PDF. Попробуйте через меню браузера → Печать → Сохранить как PDF.');
+      alert('Ошибка при создании PDF.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Android: сохранить файл в хранилище и открыть через системный просмотрщик
+  const handleAndroidSave = async () => {
+    if (!docRef.current) return;
+    setLoading(true);
+    try {
+      const { base64, filename } = await buildPDF();
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const saved = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.External, // доступно через Мои файлы → Android/data/...
+      });
+      // Открываем файл через системный Intent — показывает PDF-просмотрщики и "Сохранить в..."
+      window.open(saved.uri, '_system');
+    } catch (e) {
+      console.error('Android save error:', e);
+      alert('Не удалось сохранить PDF. Попробуйте кнопку «Отправить».');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Android: поделиться через системный share-диалог
+  const handleAndroidShare = async () => {
+    if (!docRef.current) return;
+    setLoading(true);
+    try {
+      const { base64, filename } = await buildPDF();
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { Share } = await import('@capacitor/share');
+      const saved = await Filesystem.writeFile({
+        path: `share_${Date.now()}.pdf`,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      await Share.share({ title: filename, url: saved.uri, dialogTitle: 'Отправить PDF' });
+    } catch (e) {
+      if (e?.message !== 'Share canceled') {
+        console.error('Android share error:', e);
+        alert('Ошибка при отправке PDF.');
+      }
     } finally {
       setLoading(false);
     }
@@ -194,13 +220,35 @@ export default function KP() {
               >
                 ← Изменить
               </a>
-              <button
-                onClick={handlePrint}
-                className="flex-1 sm:flex-none border border-white/20 hover:border-white/40 text-white/70 hover:text-white
-                  font-medium px-3 py-2 rounded-xl transition-colors text-xs sm:text-sm"
-              >
-                🖨 Печать
-              </button>
+              {!isNative && (
+                <button
+                  onClick={handlePrint}
+                  className="flex-1 sm:flex-none border border-white/20 hover:border-white/40 text-white/70 hover:text-white
+                    font-medium px-3 py-2 rounded-xl transition-colors text-xs sm:text-sm"
+                >
+                  🖨 Печать
+                </button>
+              )}
+              {isNative ? (
+                <>
+                  <button
+                    onClick={handleAndroidSave}
+                    disabled={loading}
+                    className="flex-1 bg-brand-blue hover:bg-brand-blue/90 disabled:opacity-50 text-white
+                      font-semibold px-3 py-2 rounded-xl transition-colors text-xs flex items-center justify-center gap-1"
+                  >
+                    {loading ? <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '💾 Сохранить'}
+                  </button>
+                  <button
+                    onClick={handleAndroidShare}
+                    disabled={loading}
+                    className="flex-1 border border-brand-blue/50 hover:border-brand-blue text-brand-blue
+                      font-semibold px-3 py-2 rounded-xl transition-colors text-xs flex items-center justify-center gap-1"
+                  >
+                    {loading ? '...' : '↗ Отправить'}
+                  </button>
+                </>
+              ) : (
               <button
                 onClick={handleDownloadPDF}
                 disabled={loading}
@@ -216,6 +264,7 @@ export default function KP() {
                   <>⬇ <span>PDF</span></>
                 )}
               </button>
+              )}
             </div>
           </div>
         </div>
