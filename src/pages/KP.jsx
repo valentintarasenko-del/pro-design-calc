@@ -53,6 +53,7 @@ import { loadCalculationById } from '../utils/storage';
 export default function KP() {
   const [calc, setCalc] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true); // загрузка расчёта из Supabase
   // Единственный ref — только на видимый предпросмотр
   const docRef = useRef(null);
 
@@ -61,7 +62,10 @@ export default function KP() {
     if (id) {
       loadCalculationById(id).then(found => {
         if (found) setCalc(found);
+        setFetching(false);
       });
+    } else {
+      setFetching(false);
     }
   }, []);
 
@@ -107,6 +111,17 @@ export default function KP() {
   };
 
   const handlePrint = () => window.print();
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-[#0D0D1A]">
+        <AppHeader />
+        <div className="flex items-center justify-center py-32 text-white/40">
+          Загрузка...
+        </div>
+      </div>
+    );
+  }
 
   if (!calc) {
     return (
