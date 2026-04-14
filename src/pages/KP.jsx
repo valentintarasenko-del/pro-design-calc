@@ -80,28 +80,43 @@ export default function KP() {
       const clientName = calc?.клиент || calc?.объект || 'КП';
       const filename = `КП ПроДизайн — ${clientName}.pdf`;
 
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename,
-          image: { type: 'jpeg', quality: 0.95 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            letterRendering: true,
-            backgroundColor: '#ffffff',
-            // Важно: элемент должен быть видим для html2canvas
-            windowWidth: 794,
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait',
-          },
-          pagebreak: { mode: ['css', 'legacy'] },
-        })
-        .from(docRef.current)
-        .save();
+      const options = {
+        margin: 0,
+        filename,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          backgroundColor: '#ffffff',
+          windowWidth: 794,
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+        },
+        pagebreak: { mode: ['css', 'legacy'] },
+      };
+
+      // На Android (Capacitor) скачивание через a.click() не работает —
+      // генерируем blob и отправляем через navigator.share()
+      const isAndroid = window.Capacitor?.isNativePlatform?.();
+
+      if (isAndroid && navigator.share && navigator.canShare) {
+        const blob = await html2pdf().set(options).from(docRef.current).outputPdf('blob');
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: filename });
+        } else {
+          // Если share с файлом не поддерживается — открываем как data URL
+          const dataUrl = await html2pdf().set(options).from(docRef.current).output('datauristring');
+          window.open(dataUrl, '_blank');
+        }
+      } else {
+        // Десктоп и браузеры — обычное скачивание
+        await html2pdf().set(options).from(docRef.current).save();
+      }
     } catch (e) {
       console.error('PDF error:', e);
       alert('Ошибка при создании PDF. Попробуйте через меню браузера → Печать → Сохранить как PDF.');
