@@ -181,14 +181,15 @@ export default function KPTemplate({ calc }) {
       {/* Тело страницы 1 */}
       <div style={{ padding: '24px 32px' }}>
 
-        {/* Предварительный расчёт — бейдж */}
+        {/* Предварительный расчёт — бейдж (inline-block работает в html2canvas) */}
         {isQuick && (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#FEF3C7', border: '1px solid #FCD34D',
-            borderRadius: 8, padding: '5px 12px', marginBottom: 20,
-          }}>
-            <span style={{ fontSize: 12, color: '#92400E', fontWeight: 600 }}>
+          <div style={{ marginBottom: 20 }}>
+            <span style={{
+              display: 'inline-block',
+              background: '#FEF3C7', border: '1px solid #FCD34D',
+              borderRadius: 8, padding: '5px 12px',
+              fontSize: 12, color: '#92400E', fontWeight: 600,
+            }}>
               ⚡ Предварительный расчёт — уточняется после замера
             </span>
           </div>
@@ -253,8 +254,13 @@ export default function KPTemplate({ calc }) {
             <h2 style={{ fontSize: 15, fontWeight: 700, color: DARK, margin: '0 0 14px', letterSpacing: -0.3 }}>
               В стоимость входит:
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
-              {включено.map((item, i) => <CheckItem key={i} text={item} />)}
+            {/* flex + width:50% вместо grid — grid плохо работает в html2canvas */}
+            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+              {включено.map((item, i) => (
+                <div key={i} style={{ width: '50%', paddingRight: 16, boxSizing: 'border-box' }}>
+                  <CheckItem text={item} />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -300,9 +306,9 @@ export default function KPTemplate({ calc }) {
         </h2>
 
         {/* Таблица */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }} className="no-break">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, borderSpacing: 0 }} className="no-break">
           <thead>
-            <tr style={{ background: LIGHT }}>
+            <tr style={{ background: LIGHT, borderBottom: '1px solid #E5E7EB' }}>
               <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, color: GRAY, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 Позиция
               </th>
