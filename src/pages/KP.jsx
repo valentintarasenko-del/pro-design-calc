@@ -1,5 +1,6 @@
 // Страница предпросмотра и скачивания КП
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 // Компонент предпросмотра — на мобиле масштабирует A4 под ширину экрана
 function MobileScaledPreview({ docRef, calc }) {
@@ -99,20 +100,26 @@ export default function KP() {
         pagebreak: { mode: ['css', 'legacy'] },
       };
 
-      // На Android (Capacitor) скачивание через a.click() не работает —
-      // генерируем blob и отправляем через navigator.share()
-      const isAndroid = window.Capacitor?.isNativePlatform?.();
+      if (Capacitor.isNativePlatform()) {
+        // Android: сохраняем во временный файл и открываем системный диалог "Поделиться"
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        const { Share } = await import('@capacitor/share');
 
-      if (isAndroid && navigator.share && navigator.canShare) {
-        const blob = await html2pdf().set(options).from(docRef.current).outputPdf('blob');
-        const file = new File([blob], filename, { type: 'application/pdf' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: filename });
-        } else {
-          // Если share с файлом не поддерживается — открываем как data URL
-          const dataUrl = await html2pdf().set(options).from(docRef.current).output('datauristring');
-          window.open(dataUrl, '_blank');
-        }
+        const dataUri = await html2pdf().set(options).from(docRef.current).output('datauristring');
+        const base64Data = dataUri.split(',')[1];
+        const tempPath = `kp_${Date.now()}.pdf`;
+
+        const saved = await Filesystem.writeFile({
+          path: tempPath,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+
+        await Share.share({
+          title: filename,
+          url: saved.uri,
+          dialogTitle: 'Сохранить или отправить PDF',
+        });
       } else {
         // Десктоп и браузеры — обычное скачивание
         await html2pdf().set(options).from(docRef.current).save();
