@@ -129,7 +129,7 @@ export default function History() {
               </div>
             ))}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
